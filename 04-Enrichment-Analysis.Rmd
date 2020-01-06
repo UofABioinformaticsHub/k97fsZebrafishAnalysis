@@ -1,0 +1,172 @@
+# Enrichment Analysis
+
+```{r Setup, include=FALSE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(readr)
+library(reshape2)
+library(knitr)
+library(tibble)
+
+# Directory Setup
+dataDir <- file.path(getwd(), "data")
+enrichmentDir <- file.path(dataDir, "enrichment")
+
+importHomerFuncEnr <- function(path, p.adjust.method = "fdr", a = 0.05, 
+                                whichEnr = c("biological_process.txt", 
+                                                  "molecular_function.txt", 
+                                                  "cellular_component.txt", 
+                                                  "msigdb.txt", 
+                                                  "reactome.txt", 
+                                                  "interpro.txt", 
+                                                  "kegg.txt", 
+                                                  "prosite.txt")) {
+  
+  # Get the paths to the enrichment analysis results. 
+  enrFilePaths <- paste0(path, whichEnr) %>%
+    set_names(gsub(x = whichEnr, pattern = ".txt", replacement = ""))
+  
+  # Import the enrichment analysis results, perform multiple testing p-value adjustment, 
+  # and then perform filtering for significant p-values. 
+  importedEnr <- lapply(enrFilePaths, function(x) readr::read_tsv(x, col_types = "?????????c?")) 
+  importedEnr <- do.call("rbind", importedEnr) %>%
+    rownames_to_column("Source") %>%
+    mutate(Source = gsub(x = Source, pattern = "\\.[[:digit:]]{1,3}$", replacement = "")) %>%
+    mutate(AdjustedP = p.adjust(Enrichment, p.adjust.method)) %>%
+    filter(AdjustedP < a)
+  
+  return(importedEnr)
+}
+
+bonAdjust <- function(x, a = 1) {
+  read_tsv(x) %>%
+    dplyr::select(-`P-value`, -`q-value (Benjamini)`) %>%
+  mutate(PValue = exp(`Log P-value`),
+         Bonferroni = p.adjust(PValue, "bonferroni"),
+         FDR = p.adjust(PValue, "fdr")) %>%
+  filter(PValue < a)
+}
+```
+
+
+## Define Groups
+
+In this section, we define groups of genes that will be tested with the following:
+
+- **Functional Enrichment**: Gene Ontology, KEGG, Interpro, MSigDB gene sets, etc. using HOMER software. 
+- **Promoter Motif Enrichment**: Tested for known zebrafish gene promoter motifs corresponding to transcription factor binding sites, using HOMER software. 
+
+First, we will import the results of the DE gene analysis in the `limma_results` data.frame and use this to define the gene groups. 
+
+```{r Define-Gene-Groups, message=FALSE, warning=FALSE}
+# Import results from DE analysis 
+limma_results <- readRDS(file.path(dataDir, "de_genes", "limma_results.rds"))
+
+# Export the list of genes in limma_results for use as the "background" set of genes for enrichment testing. 
+# limma_results %>% dplyr::select(ensembl_gene_id) %>% write_tsv(file.path(enrichmentDir, "backgroundGenes.txt"))
+
+
+# Define the groups of genes depending on whether they are up (1) or down (-1) regulated in particular comparisons. 
+geneGroups <- list(
+  inappropriatelyDownregulated = limma_results %>% filter(Res.K97_mutOld_wtOld == -1, Res.K97_mutOld_mutYoung == -1),
+  failureToUpregulate = limma_results %>% filter(Res.K97_wtOld_wtYoung == 1, Res.K97_mutOld_wtOld == -1),
+  failureToDownregulate = limma_results %>% filter(Res.K97_wtOld_wtYoung == -1, Res.K97_mutOld_wtOld == 1),
+  acceleratedAging = limma_results %>% filter((Res.K97_mutYoung_wtYoung == 1 & Coef.K97_wtOld_wtYoung > 0 & p.value.K97_wtOld_wtYoung < 0.05) |
+                                               (Res.K97_mutYoung_wtYoung == -1 & Coef.K97_wtOld_wtYoung < 0 & p.value.K97_wtOld_wtYoung < 0.05)),
+  agingSignature = limma_results %>% filter((Res.K97_wtOld_wtYoung == -1 & Res.K97_mutOld_mutYoung == -1) | 
+                                              (Res.K97_wtOld_wtYoung == 1 & Res.K97_mutOld_mutYoung == 1)) 
+  
+)
+
+# Define groups of DE genes for each comparison.
+geneGroups_DE <- list(
+  mutYoungwtYoung = limma_results %>% filter(Res.K97_mutYoung_wtYoung != 0),
+  mutOldwtOld = limma_results %>% filter(Res.K97_mutOld_wtOld != 0),
+  wtOldwtYoung = limma_results %>% filter(Res.K97_wtOld_wtYoung != 0),
+  mutOldmutYoung = limma_results %>% filter(Res.K97_mutOld_mutYoung != 0)
+)
+
+# Display the number of genes in each group. 
+geneGroups %>% lapply(dim) %>% as.data.frame %>% extract(1,) %>% kable(caption = "Number of genes in each group.")
+geneGroups_DE %>%  lapply(dim) %>% as.data.frame %>% extract(1,) %>% kable(caption = "Number of DE genes for each comparison.")
+```
+
+## Motif Enrichment with HOMER
+
+*HOMER* was run using the [findMotifs.pl](http://homer.ucsd.edu/homer/motif/index.html) method to obtain the enriched known zebrafish promoter motifs and functional enrichment. Note that the background set of genes used when running *HOMER* is the `r dim(limma_results)[1]` genes in the `limma_results` object from the DE gene analysis. 
+
+Below is an example of how *HOMER*'s `findMotifs.pl` method can be run using a list of gene names (ENSEMBL format in this case), a list of curated zebrafish promoters
+
+```{r HOMER-Motif-Enrichment-Example, engine='bash', eval=FALSE}
+findMotifs.pl inappropriatelyDownregulated.txt \ #Input list of genes. 
+zebrafish \ #Use known zebrafish promoter motifs to look for enrichment. 
+inappropriatelyDownregulated \ #Folder to save the results into. 
+-start -1500 -end 200 \ #Define promoter region as 1500bp upstream and 200bp downstream.
+-p 4 \ #Use four CPUs
+-bg backgroundGenes.txt #List of background genes. 
+```
+
+## Functional Enrichment Results
+
+We can now import the results using `importHomerFuncEnr` which merges together the enrichment results from each set of tests (e.g. Gene ontology, KEGG, Interpro, etc. ) and does multiple testing adjustment (Bonferroni) across the whole merged data.frame. 
+
+```{r Functional-Enrichment-Results, error=FALSE, warning=FALSE, message=FALSE}
+# Gene Groups
+inappropriatelyDownregulated <- importHomerFuncEnr(file.path(enrichmentDir, "inappropriatelyDownregulated/"), "bonferroni")
+failureToUpregulate <- importHomerFuncEnr(file.path(enrichmentDir, "failureToUpregulate/"), "bonferroni")
+failureToDownregulate <- importHomerFuncEnr(file.path(enrichmentDir, "failureToDownregulate/"), "bonferroni")
+acceleratedAging <- importHomerFuncEnr(file.path(enrichmentDir, "acceleratedAging/"), "bonferroni")
+agingSignature <- importHomerFuncEnr(file.path(enrichmentDir, "commonAgingGenes/"), "bonferroni")
+inversion <- importHomerFuncEnr(file.path(enrichmentDir, "inversion/"), "bonferroni")
+
+# Gene groups from DE analysis
+mutYoungwtYoung <- importHomerFuncEnr(file.path(enrichmentDir, "mutYoungwtYoung/"), "bonferroni")
+mutOldwtOld <- importHomerFuncEnr(file.path(enrichmentDir, "mutOldwtOld/"), "bonferroni")
+wtOldwtYoung <- importHomerFuncEnr(file.path(enrichmentDir, "wtOldwtYoung/"), "bonferroni")
+mutOldmutYoung <- importHomerFuncEnr(file.path(enrichmentDir, "mutOldmutYoung/"), "bonferroni")
+
+
+
+functionalEnrichmentResults <- list(inappropriatelyDownregulated = inappropriatelyDownregulated, 
+                                    failureToUpregulate = failureToUpregulate, 
+                                    failureToDownregulate = failureToDownregulate, 
+                                    acceleratedAging = acceleratedAging,
+                                    agingSignature = agingSignature,
+                                    inversion = inversion,
+                                    mutYoung_vs_wtYoung = mutYoungwtYoung,
+                                    mutOld_vs_wtOld = mutOldwtOld,
+                                    wtOld_vs_wtYoung = wtOldwtYoung,
+                                    mutOld_vs_mutYoung = mutOldmutYoung
+                                    )
+
+# Export the functional enrichment results. 
+# writexl::write_xlsx(functionalEnrichmentResults, file.path(enrichmentDir, "functionalEnrichmentResults.xlsx"))
+
+
+# Preview the Results
+functionalEnrichmentResults %>% lapply(., function(x) { x %>% as.data.frame %>% head %>% kable})
+```
+
+## Promoter Motif Enrichment results
+
+*HOMER* outputs the promoter enrichment results in the `knownResults.txt` table for each set of genes, which contains the unadjusted enrichment *p*-values for each promoter motif. Here, we will import this table and perform Bonferroni adjustment on the *p*-values. 
+
+```{r Motif-Enrichment-Results, error=FALSE, warning=FALSE, message=FALSE}
+motifs <- list(
+  inappropriatelyDownregulated = bonAdjust(file.path(enrichmentDir, "inappropriatelyDownregulated", "knownResults.txt"), 1),
+  failureToUpregulate = bonAdjust(file.path(enrichmentDir, "failureToUpregulate", "knownResults.txt"), 1),
+  failureToDownregulate = bonAdjust(file.path(enrichmentDir, "failureToDownregulate", "knownResults.txt"), 1),
+  acceleratedAging = bonAdjust(file.path(enrichmentDir, "acceleratedAging", "knownResults.txt"), 1),
+  inversion = bonAdjust(file.path(enrichmentDir, "inversion", "knownResults.txt"), 1),
+  mutYoungwtYoung = bonAdjust(file.path(enrichmentDir, "mutYoungwtYoung", "knownResults.txt"), 0.05),
+  mutOldwtOld = bonAdjust(file.path(enrichmentDir, "mutOldwtOld", "knownResults.txt"), 0.05)
+)
+
+# Export the functional enrichment results. 
+# writexl::write_xlsx(motifs, file.path(enrichmentDir, "motifEnrichmentResults.xlsx"))
+
+# Preview the results:
+motifs %>% lapply(., function(x) { x %>% as.data.frame %>% head %>% kable})
+```
+

@@ -1,0 +1,77 @@
+---
+title: "K97fs Zebrafish Analysis"
+author: "Nhi Hin"
+site: bookdown::bookdown_site
+documentclass: book
+output:
+  bookdown::gitbook: default
+  #bookdown::pdf_book: default
+---
+
+```{r Packages, include=FALSE}
+# Data manipulation
+library(dplyr)
+library(readr)
+library(tibble)
+library(magrittr)
+library(reshape2)
+
+# Analysis
+library(limma) # DE gene / DA protein analysis
+library(edgeR) # For making DGEList objects
+library(RUVSeq) # Batch effect correction
+library(biomaRt) # Gene annotation
+library(UniProt.ws) # Protein annotation
+library(GSEABase) # Import .gmt gene sets
+library(org.Dr.eg.db) # Zebrafish gene annotation and IDs
+library(org.Hs.eg.db) # Human gene annotation and IDs
+library(genefilter) # Filter genes based on row sums or row variance
+library(WGCNA) # For weighted gene co-expression network analysis
+library(dynamicTreeCut) # Dynamic branch cutting algorithm for WGCNA
+library(anRichment) # Functional enrichment analysis for WGCNA
+library(flashClust) # Hierarchical clustering for WGCNA
+
+# Visualisation
+library(ggplot2)
+library(RColorBrewer)
+library(grid)
+library(scales)
+library(knitr)
+library(kableExtra)
+library(pheatmap)
+```
+
+```{r Config, include=FALSE}
+# Directories
+dataDir <- file.path(getwd(), "data") # Main data directory
+dbDir <- file.path(dataDir, "db") # Saved Bioconductor/annotation objects
+deDir <- file.path(dataDir, "de_genes") # DE gene analysis files
+daDir <- file.path(dataDir, "da_proteins") # DA protein analysis files
+genesetsDir <- file.path(dataDir, "genesets") # Gene set test analysis files
+enrDir <- file.path(dataDir, "enrichment") # Motif and functional enrichment files
+wgcnaDir <- file.path(dataDir, "wgcna") # WGCNA files
+
+# Saved bioconductor/annotation objects
+mart <- readRDS(file.path(dataDir, "db", "mart.rds")) # Zebrafish BioMart object
+up <- readRDS(file.path(dataDir, "db", "up.rds")) # Zebrafish UniProt.ws object, created using `up <- UniProt.ws(taxId = 7955)`
+huMart <- readRDS(file.path(dataDir, "db", "huMart.rds")) # Human BioMart object
+
+# ggplot2 theme
+theme_set(theme_bw())
+
+# Viewports for grid
+## Viewports for showing two plots side by side
+  vp_left <- viewport(x = 0, y = 0, width = 0.5, height = 1, just = c(0, 0))
+  vp_right <- viewport(x = 0.5, y = 0, width = 0.5, height = 1, just = c(0,0))
+## Viewports for showing four plots on a 2x2 grid.
+  vp1 <- viewport(x = 0, y = 0, width = 0.5, height = 0.5, just = c(0, 0))
+  vp2 <- viewport(x = 0.5, y = 0, width = 0.5, height = 0.5, just = c(0,0))
+  vp3 <- viewport(x = 0, y = 0.5, width = 0.5, height = 0.5, just = c(0, 0))
+  vp4 <- viewport(x = 0.5, y = 0.5, width = 0.5, height = 0.5, just = c(0, 0))
+
+```
+
+
+This website describes the analyses in the paper [Accelerated brain aging towards transcriptional inversion in a zebrafish model of familial Alzheimer's disease](https://www.biorxiv.org/content/early/2018/02/09/262162) by Hin et al. (2018). 
+
+

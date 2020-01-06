@@ -1,0 +1,1087 @@
+---
+title: "K97fs Zebrafish Analysis"
+author: "Nhi Hin"
+site: bookdown::bookdown_site
+documentclass: book
+output:
+  bookdown::gitbook: default
+  #bookdown::pdf_book: default
+---
+
+# Data manipulation
+## Viewports for showing two plots side by side
+## Viewports for showing four plots on a 2x2 grid.
+
+<!--chapter:end:index.Rmd-->
+
+
+# Differential Gene Expression Analysis 
+## Data Description
+## Data Pre-Processing
+## Filtering Low Expression Genes
+## Batch Effect Estimation
+## Limma Analysis 
+### Including Batch Effect Estimation
+### Not Including Batch Effect Estimation
+### Effect of Accounting for Batch Effects
+## Results
+## Heatmap Summary
+## Session Info
+
+<!--chapter:end:01-DEGene-Analysis.Rmd-->
+
+
+# Differential protein abundance analysis {#DAProteins}
+## Manipulating data
+## Protein analysis
+## Visualisation and plots
+## Data Description
+## Data Pre-Processing
+### Protein Abundance Estimation
+### Normalisation of 6 month and 24 month datasets
+### Protein Annotation
+## Exploratory Data Analysis
+### Correlation between 6 and 24 month samples
+### Principal Component Analysis 
+## Differential protein abundance analysis
+## Results
+### Effect of the K97fs Mutation on Protein Abundance
+#### Effect of K97Gfs/+ on Protein Abundance at 6 Months
+#### Effect of K97Gfs/+ on Protein Abundance at 24 Months
+## Heatmap Summary
+## Enrichment Analysis 
+## Session Info
+
+<!--chapter:end:02-DAProtein-Analysis.Rmd-->
+
+
+# Gene Set Testing Analysis 
+## Import Gene Sets from MSigDB
+## Map Human entrezgenes to Zebrafish entrezgenes
+## Convert voom object (DE gene analysis) Ensembl gene IDs to entrezgenes
+## Build gene set indexes
+## Fast Rotation Gene Set Analysis (`fry`)
+## Use `roast` function to obtain estimate proportions of up and down-regulated genes
+## Heatmap Summary
+## Session Info
+
+<!--chapter:end:03-Gene-Set-Testing-with-FRY.Rmd-->
+
+
+# Enrichment Analysis
+## Define Groups
+## Motif Enrichment with HOMER
+## Functional Enrichment Results
+## Promoter Motif Enrichment results
+
+<!--chapter:end:04-Enrichment-Analysis.Rmd-->
+
+# Weighted Co-expression Network Analysis
+
+Weighted co-expression network analysis (WGCNA) is a systems biology approach to analysing gene expression data that is useful for revealing broader biological changes in particular samples. Compared with DE gene analysis which reveals significant individual genes, WGCNA reveals how the overall gene expression patterns can be represented as groups of genes ("modules") with distinct biological significance. By examining how these modules of genes change in expression between e.g. mutant and wild type samples, we can start to see what biological processes or pathways may be altered in mutants relative to wild types. 
+
+The aims of this analysis include:
+
+1. Pre-process gene expression data for (1) zebrafish brain RNA-seq data set and (2) a human early-onset Alzheimer's disease brain microarray data set.
+2. Construct separate gene co-expression networks for the zebrafish and human data sets.
+3. Identify modules (groups) of co-expressed genes in each network. 
+4. Determine the biological significance of each module in both networks using (1) functional enrichment analysis / promoter motif enrichment analysis, and (2) correlating module expression with sample traits/characteristics. 
+5. Determine whether properties of the zebrafish brain co-expression network are preserved in the human brain co-expression network. 
+6. Export networks for visualisation in *Gephi*. 
+
+```{r Setup-For-WGCNA, include=FALSE}
+# Data manipulation
+library(dplyr)
+library(magrittr)
+library(reshape2)
+library(readr)
+library(tibble)
+
+# Analysis
+library(limma)
+library(edgeR)
+library(genefilter)
+library(biomaRt)
+library(UniProt.ws)
+library(WGCNA)
+library(dynamicTreeCut)
+library(anRichment)
+library(flashClust)
+library(org.Dr.eg.db)
+
+# Visualisation
+library(ggplot2)
+library(RColorBrewer)
+library(knitr)
+library(kableExtra)
+library(pheatmap)
+library(corrplot)
+library(grid)
+
+  
+# Options
+knitr::opts_chunk$set(echo = TRUE)
+theme_set(theme_bw())
+```
+
+```{r Config-For-WGCNA, echo=FALSE, message=FALSE, warning=FALSE}
+# Data directory
+dataDir <- file.path(getwd(), "data")
+wgcnaDir <- file.path(dataDir, "wgcna")
+
+# Load some annotation objects.
+mart <- readRDS(file.path(dataDir, "db", "mart.rds")) # Zebrafish BioMart object
+up <- readRDS(file.path(dataDir, "db", "up.rds")) # Zebrafish UniProt.ws object
+huMart <- readRDS(file.path(dataDir, "db", "huMart.rds")) # Human BioMart object
+geneExtraInfo <- readRDS(file.path(wgcnaDir, "geneInfoFromBiomart.rds")) #Previously retrieved from BioMart, some gene descriptions. 
+
+# Filtered DGEList for zebrafish dataset, including sample and gene metadata.
+# This object is taken from the DE gene analysis done using limma and edgeR.
+geneCounts <- readRDS(file.path(dataDir, "wgcna", "geneCounts.rds"))
+  
+# Human sample metadata table, with the samples as rows and traits as columns.
+humanSamples <- readRDS(file.path(wgcnaDir, "humanSamples.rds"))
+
+# Function to save a pheatmap as a pdf in A4 size 
+save_pheatmap_pdf <- function(x, filename, width=8, height=11) {
+   stopifnot(!missing(x))
+   stopifnot(!missing(filename))
+   pdf(filename, width=width, height=height)
+   grid::grid.newpage()
+   grid::grid.draw(x$gtable)
+   dev.off()
+}
+
+# Viewports for grid
+  # Viewpoints for showing 4 plots on a 2x2 grid
+  vp1 <- viewport(x = 0, y = 0, width = 0.5, height = 0.5, just = c(0, 0))
+  vp2 <- viewport(x = 0.5, y = 0, width = 0.5, height = 0.5, just = c(0,0))
+  vp3 <- viewport(x = 0, y = 0.5, width = 0.5, height = 0.5, just = c(0, 0))
+  vp4 <- viewport(x = 0.5, y = 0.5, width = 0.5, height = 0.5, just = c(0, 0))
+  # Viewports for grid
+## Viewports for showing two plots side by side
+vp_left <- viewport(x = 0, y = 0, width = 0.5, height = 1, just = c(0, 0))
+vp_right <- viewport(x = 0.5, y = 0, width = 0.5, height = 1, just = c(0,0))
+```
+
+## Data Import and Pre-Processing
+
+### Zebrafish Data
+
+Import the `DGEList` object previous made in the DE gene analysis, `geneCounts`. This object contains three data.frames, `sample` (sample metadata), `counts` (gene counts in cpm), and `genes` (gene annotation from *Biomart*). The data has already been normalised (TMM method), which can be seen in Figure \@ref(fig:WGCNA-Boxplots-Normalised-Gene-Expression).
+
+```{r WGCNA-Boxplots-Normalised-Gene-Expression, message=FALSE, warning=FALSE, echo=FALSE, fig.cap="Boxplots showing the distribution of gene counts for each RNA-seq library in the K97Gfs dataset."}
+geneCounts %>% 
+  cpm(log=TRUE) %>%
+  melt() %>% 
+  left_join(geneCounts$samples%>%rownames_to_column("Sample"), by = c("Var2"="Sample")) %>% 
+  ggplot(aes(x=factor(as.character(Var2), levels=unique(Var2)), y=value, fill = as.factor(group))) + 
+  geom_boxplot(outlier.colour = "#888888", outlier.size = 0.25, 
+               notch = TRUE, outlier.fill=NULL, outlier.shape=19,
+               show.legend = FALSE) +
+  labs(x = "RNA-seq Library", y = "logCPM Gene Count", fill="Group") +
+  theme(aspect.ratio = 2, text = element_text(size=6),
+        axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+  facet_wrap(~months + psen1, scales="free_x", ncol=4) 
+```
+
+According to *WGCNA*'s [FAQ page](https://labs.genetics.ucla.edu/horvath/CoexpressionNetwork/Rpackages/WGCNA/faq.html), genes can be filtered by mean expression of variance since low-expressed or non-varying genes usually represent noise, which is undesirable when forming a co-expression network. Below, we will filter by both mean expression and variance to retain genes which tend to be more highly expressed and variable across samples. The effects of filtering via expression (>1.5cpm in at least 6 RNA-seq libraries) and variance (standard deviation above the 25th quantile) is shown in Figure \@ref(fig:WGCNA-Densityplot-Effect-of-Filtering-Gene-Expression)
+
+```{r WGCNA-Densityplot-Effect-of-Filtering-Gene-Expression, warning=FALSE, message=FALSE, fig.cap="Effect of filtering low expressed and low variance genes from the RNA-seq libraries from the K97Gfs dataset."}
+
+# Density plot of TMM-normalized gene expression distribution for each library before filtering. 
+A <- geneCounts %>% 
+  cpm(log = TRUE) %>% 
+  melt %>% 
+  filter(is.finite(value)) %>% 
+  ggplot(aes(x = value, colour = Var2)) +
+  geom_density() + 
+  guides(colour = FALSE) +
+  ggtitle("Before filtering") +
+  labs(x = "logCPM", y = "Density")
+
+# Retain genes which are expressed at sufficiently high levels, at least 1.5 cpm in 6 (half of the total number of) samples.
+keepTheseGenes <- rowSums(cpm(geneCounts) > 1.5) >= 6  
+
+# Density plot of the gene expression distribution after filtering out low expressed genes. 
+B <- geneCounts %>% 
+  cpm(log = TRUE) %>% 
+  extract(keepTheseGenes,) %>%
+  melt %>% 
+  filter(is.finite(value)) %>% 
+  ggplot(aes(x = value, colour = Var2)) +
+  geom_density() + 
+  guides(colour = FALSE) +
+  ggtitle("After filtering low exp genes")
+
+# Retain genes with sufficiently high variation in expression across all samples.
+# Here we define sufficiently high variation as having a standard deviation above the 25th quantile (so not in bottom 25%).
+variableGenes <- rowSds(cpm(geneCounts, log=TRUE)) >  quantile(rowSds(cpm(geneCounts, log=TRUE)), 0.25)
+
+# Density plot of gene expression distribution after filtering out low variance genes. 
+C <- geneCounts %>% 
+  cpm(log = TRUE) %>% 
+  extract(variableGenes,) %>%
+  melt %>% 
+  filter(is.finite(value)) %>% 
+  ggplot(aes(x = value, colour = Var2)) +
+  geom_density() + 
+  guides(colour = FALSE) +
+  ggtitle("After filtering variable genes")
+
+# Density plot of gene expression distribution after filtering out both low expressed and low variance genes. 
+D <- geneCounts %>% 
+  cpm(log = TRUE) %>% 
+  extract(keepTheseGenes&variableGenes, ) %>%
+  melt %>% 
+  filter(is.finite(value)) %>% 
+  ggplot(aes(x = value, colour = Var2)) +
+  geom_density() + 
+  guides(colour = FALSE) +
+  ggtitle("After filtering both")
+
+# Plot the effect of filtering low expressed genes, low variation genes, and both.
+grid.newpage()
+print(A, vp = vp3)
+print(B, vp = vp4)
+print(C, vp = vp1)
+print(D, vp  = vp2)
+```
+
+```{r WGCNA-Perform-Filtering, echo=FALSE}
+# Perform the filtering step and recalculate the TMM normalisation factors for each library. 
+geneCounts <- geneCounts[keepTheseGenes&variableGenes,,keep.lib.sizes = FALSE]
+```
+
+
+After filtering out low expressed genes and low variance genes, each RNA-seq library contains `r dim(geneCounts$counts)[1]` genes compared to the original 32,266 genes. 
+The distributions of gene counts in each RNA-seq library after normalization and filtering are shown in the following boxplots in Figure \@ref(fig:WGCNA-Boxplots-Filtered-Gene-Expression). 
+
+```{r WGCNA-Boxplots-Filtered-Gene-Expression, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Effect of TMM (Trimmed Mean of M-values) normalisation followed by filtering out low expression and low variance Genes on the gene expression distributions for each RNA-seq library in the K97Gfs dataset."}
+geneCounts %>% 
+  cpm(log=TRUE) %>%
+  melt() %>% 
+  left_join(geneCounts$samples%>%rownames_to_column("Sample"), by = c("Var2"="Sample")) %>% 
+  ggplot(aes(x=factor(as.character(Var2), levels=unique(Var2)), y=value, fill = as.factor(group))) + 
+  geom_boxplot(outlier.colour = "#888888", outlier.size = 0.25, 
+               notch = TRUE, outlier.fill=NULL, outlier.shape=19,
+               show.legend = FALSE) +
+  labs(x = "RNA-seq Library", y = "logCPM Gene Count", fill="Group") +
+  theme(aspect.ratio = 2, text = element_text(size=6),
+        axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+  facet_wrap(~months + psen1, scales="free_x", ncol=4) 
+```
+
+The *WGCNA* [FAQ](https://labs.genetics.ucla.edu/horvath/CoexpressionNetwork/Rpackages/WGCNA/faq.html) recommends performing a log<sub>2</sub> transformation before transposing to get the matrix into the correct format for analysis. Here, we use *edgeR*'s `cpm()` function with a `log2` transformation, as the `cpm()` function takes into account the TMM-normalisation factors previously calculated for each library to account for differences in library size between samples. The final matrix will be stored in an object called `zebrafish_genes`. 
+
+```{r WGCNA-Zebrafish-Gene-Matrix, message=FALSE, warning=FALSE}
+zebrafish_genes <- geneCounts %>% cpm(log=TRUE) %>% t %>% as.data.frame
+```
+
+### Human Data
+
+The data is Affymetrix Human Gene 1.1 ST Array gene expression data from human post-mortem individuals with and without early-onset Alzheimer's disease. In this dataset, there are 14 control individuals without Alzheimer's disease or any neurodegeneration or comorbidities, 7 individuals with familial Alzheimer's disease due to a mutation in *PSEN1* (1 with `E120G` mutation, 2 with `V89L` mutation, and 4 with `V89L` mutation), and 7 individuals with early-onset Alzheimer's disease but without mutations in *PSEN1*. 
+
+Processed and raw data can be downloaded from [ArrayExpress](https://www.ebi.ac.uk/arrayexpress/experiments/E-GEOD-39420/) 
+under the accession number `E-GEOD-39420`. The raw data has been processed by [Antonell et al. (2013)](https://www.ncbi.nlm.nih.gov/pubmed/23369545) through background adjustment, normalisation, and summarisation by Robust Multi-array Analysis (RMA) using the *Affy* package (version 1.30.0) from *Bioconductor* on R language (version 2.13.2). We will proceed with this analysis using the processed gene expression data.
+
+First we import the relevant files into R. 
+
+- `humanSamples` from the file `E-GEOD-39420.sdrf.txt` contains metadata (characteristics and comments) about each sample, including their age at death, 
+*APOE* genotype, Braak stage (a morphological-based measure of neurodegeneration in their brain), sex, and importantly their *PSEN1* genotype. 
+- `humanExprs` contains the gene expression data for each sample (one sample per column and one probe per row), along with information related to each probe (row), including gene and transcript assignments.
+
+In microarray data, there are multiple probes mapping to each gene  We will use the `collapseRows()` function from the *WGCNA* package to retain only one gene per probe, using the `MaxMean` method to choose the gene which has the highest mean expression across the samples. 
+
+```{r WGCNA-Import-Human-Data, message=FALSE, eval=FALSE}
+# Import sample metadata and remove punctuation from column headings. 
+humanSamples <- read_tsv(file.path(wgcnaDir, "/E-GEOD-39420.sdrf.txt")) %>%
+  set_colnames(gsub(x = colnames(.), pattern = " ", replacement = "_")) %>%
+  set_colnames(gsub(x = colnames(.), pattern = "\\[|\\]", replacement = "")) %>%
+  mutate(Source_Name = gsub(x = Source_Name, pattern = " 1", replacement = ""))
+
+# Make a list of the locations of the  microarray gene expression data for each sample.
+humanMicroarrayFiles <- list.files(file.path(wgcnaDir, "FAD_HumanData"), full.names = TRUE) %>%
+  set_names(list.files(file.path(wgcnaDir, "FAD_HumanData"), full.names = FALSE)) %>%
+  set_names(gsub(x=names(.), pattern="_sample_table.txt", replacement=""))
+
+# Read in the microarray gene expression data fromm the location list,
+# and join the data into one large data.frame. 
+humanGeneExprs <- lapply(humanMicroarrayFiles, read_tsv) %>%
+  lapply(., bind_cols) %>%
+  as.data.frame %>%
+  column_to_rownames(paste0(names(humanMicroarrayFiles)[1], ".ID_REF")) %>%
+  dplyr::select(-contains("ID_REF")) %>%
+  set_colnames(gsub(x = colnames(.), pattern = ".VALUE", replacement = "")) %>%
+  extract(, humanSamples$Source_Name)
+
+# Import in gene and probe information given with the gene expression data.
+humanProbesToGenes <- read_tsv(file.path(wgcnaDir, "A-GEOD-11532.adf.txt"), comment = "#", skip=2)
+
+humanGenes <- read_tsv(file.path(wgcnaDir, "A-GEOD-11532_comments.txt")) %>%
+  set_colnames(gsub(x = colnames(.), pattern="Comment\\[(.*)\\]", replacement = "\\1")) %>%
+  bind_cols(humanProbesToGenes) %>%
+  mutate(Reporter_Name = as.character(Reporter_Name))
+
+# Join the gene and probe information to the human gene expression data 
+# and remove probes which don't map to a gene. 
+humanExprs <- humanGeneExprs %>% 
+  rownames_to_column("Reporter_Name") %>% 
+  mutate(Reporter_Name = as.character(Reporter_Name)) %>% 
+  left_join(humanGenes%>%mutate(Reporter_Name=as.character(Reporter_Name)), by = "Reporter_Name") %>%
+  filter(!is.na(Reporter_Database_Entry))
+
+# Retain only one gene per probe. We will retain the gene with the highest mean 
+# expression across all samples.
+humanExprsUniqueGenes <- humanExprs %>% 
+  column_to_rownames("Reporter_Name") %>% 
+  dplyr::select(starts_with("GSM")) %>% 
+  as.matrix %>% 
+  collapseRows(rowGroup = humanExprs$gene_assignment, rowID = rownames(.), method = "MaxMean")
+
+# After running the collapseRows function, we need to join the "collapsed" matrix
+# back to the gene and probe information. 
+# Also, extract the RefSeq ID from the  gene_assignment column for each gene.
+genes <- humanExprsUniqueGenes$datETcollapsed %>%
+  as.data.frame %>%
+  rownames_to_column("gene_assignment") %>%
+  extract(-1, ) %>%
+  left_join(humanGenes, by = "gene_assignment") %>% 
+  mutate(GeneID = gsub(x = gene_assignment, pattern = " .*$", replacement = "")) 
+
+# Use BioMart to retrieve other gene identifiers, using the RefSeq IDs.
+geneIDs <- getBM(
+  attributes = c("ensembl_gene_id", "entrezgene", "refseq_mrna"), 
+  filters = "refseq_mrna", 
+  values = genes$GeneID, 
+  mart = humanMart) 
+
+# Use ENSEMBL gene ids to retrieve homologous human genes in zebrafish. 
+# We will also retrieve some information about the homology.
+humanToZebrafish <- getBM(
+  attributes = c("ensembl_gene_id", "drerio_homolog_ensembl_gene", 
+                 "drerio_homolog_orthology_type", "drerio_homolog_perc_id", 
+                 "drerio_homolog_goc_score", "drerio_homolog_orthology_confidence"),
+  values = list("ensembl_gene_id" = geneIDs$ensembl_gene_id),
+  filters = c("ensembl_gene_id"), mart = huMart)
+
+# Filter human genes and only retain ones which have zebrafish gene homologs
+# which are present in the zebrafish dataset. 
+finalHumanGeneList <- humanToZebrafish %>% 
+  filter(drerio_homolog_ensembl_gene != "", drerio_homolog_ensembl_gene %in% colnames(zebrafishWGCNAGenes)) %>%
+  left_join(geneIDs, by = "ensembl_gene_id") %>%
+  left_join(genes, by = c("refseq_mrna"="GeneID")) %>%
+  arrange(desc(drerio_homolog_perc_id), desc(drerio_homolog_orthology_confidence)) %>% 
+  distinct(ensembl_gene_id, .keep_all=TRUE) %>%
+  distinct(drerio_homolog_ensembl_gene, .keep_all=TRUE)
+```
+```{r Read-Human-Genes, echo=FALSE}
+# Because the previous steps (particularly collapseRows) take a while to run, I've saved the finished R objects 
+# to be loaded below to save time. 
+humanExprsUniqueGenes <- readRDS(file.path(wgcnaDir, "humanExprsUniqueGenes.rds"))
+genes <- readRDS(file.path(wgcnaDir, "humanGenes.rds"))
+humanSamples <- readRDS(file.path(wgcnaDir, "humanSamples.rds")) 
+humanSamples %<>% rownames_to_column("Source_Name")
+finalHumanGeneList <- readRDS(file.path(wgcnaDir, "finalHumanGeneList.rds"))
+```
+
+The boxplots below in Figure \@ref(fig:WGCNA-Boxplots-Gene-Expression-Human-Data) show the gene expression distribution of each human sample.
+
+```{r WGCNA-Boxplots-Gene-Expression-Human-Data, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="Boxplots showing gene expression distribution for all samples from the human early-onset AD dataset."}
+finalHumanGeneList %>% 
+  dplyr::select(drerio_homolog_ensembl_gene, starts_with("GSM")) %>% 
+  melt %>% 
+  set_colnames(c("gene", "sample", "geneexp")) %>% 
+  left_join(humanSamples, by = c("sample"="Source_Name")) %>%
+  ggplot(aes(x = sample, y = geneexp, fill = as.factor(psen1_mutation))) + 
+  geom_boxplot(outlier.colour = "#888888", outlier.size = 0.25, 
+               notch = TRUE, outlier.fill=NULL, outlier.shape=19) +
+  labs(x = "Sample", y = "Gene Expression", fill="PSEN1 Mutation") +
+  theme(aspect.ratio = 0.5, 
+        legend.position = "bottom",
+        text = element_text(size=6),
+        axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank()) 
+
+```
+
+We can also visualise the effect of restricting (filtering) the human dataset to include only the genes which were previously determined in the zebrafish dataset to have sufficiently high expression (1.5 cpm in at least 6 out of 12 samples) and variance (with standard deviation greater than the bottom 25% of standard deviations in the dataset). A comparison of the gene expression distribution before and after filtering is shown below in \@ref(fig:WGCNA-Boxplots-Filtered-Human-Data).
+
+```{r WGCNA-Boxplots-Filtered-Human-Data, warning=FALSE, message=FALSE, echo = FALSE, fig.cap="Density plots showing the effect of filtering on gene expression in the human early-onset AD data set."}
+prefilteredPlot <- humanExprsUniqueGenes$datETcollapsed %>% 
+  as.data.frame %>% 
+  melt %>% 
+  set_colnames(c("sample", "geneexp")) %>% 
+  ggplot(aes(x = geneexp, colour = sample)) + 
+  geom_density() + 
+  guides(colour = FALSE) +
+  ggtitle("Before Filtering - 21545 human genes") +
+  labs(x = "Gene Expression", y = "Density")
+
+postfilteredPlot <- finalHumanGeneList %>% 
+  dplyr::select(drerio_homolog_ensembl_gene, starts_with("GSM")) %>%
+  melt %>%   set_colnames(c("gene", "sample", "geneexp")) %>% 
+  filter(is.finite(geneexp)) %>% 
+  ggplot(aes(x = geneexp, colour = sample)) +
+  geom_density() + 
+  guides(colour = FALSE) +
+  ggtitle("After Filtering - 8271 human genes") +
+  labs(x = "Gene Expression", y = "Density")
+
+grid.newpage()
+print(prefilteredPlot, vp = vp_left)
+print(postfilteredPlot, vp  = vp_right)
+```
+
+To ensure that the gene co-expression networks for the zebrafish and human data sets can be compared later, we will only include genes that are present (expressed in) both data sets. By intersecting the `r dim(finalHumanGeneList)[1]` human genes with the `r dim(zebrafish_genes)[2]` zebrafish genes, we get 7371 genes to build each co-expression network with.
+
+```{r Overlap-Zebrafish-and-Human-Genes, echo=FALSE}
+human_genes <- finalHumanGeneList %>% 
+  dplyr::select(drerio_homolog_ensembl_gene, starts_with("GSM")) %>% 
+  column_to_rownames("drerio_homolog_ensembl_gene") %>% as.matrix %>%
+  t %>% as.data.frame
+
+zebrafish_genes %<>% extract(colnames(human_genes))
+```
+
+
+## Network Construction
+
+### Choice of Soft-Thresholding Power
+
+The first step in constructing a scale-free gene co-expression requires choosing a soft-thresholding power. 
+
+Here, we test a range of possible soft-thresholding powers to find the minimum one which results in approximately [scale-free topology](https://en.wikipedia.org/wiki/Scale-free_network) for the zebrafish and human gene expression networks. We define an appropriate minimum scale-free topology fitting index *R<sup>2</sup>* to be at least 0.80. This step takes a couple of mins to run. 
+
+```{r Choose-Soft-Thresholding-Power, message=FALSE, warning=FALSE}
+# Choose a set of soft-thresholding powers to test.
+powers = c(1:10, seq(from = 12, to = 20, by = 2))
+
+# Call the network topology analysis function.
+sft_human = pickSoftThreshold(human_genes, 
+                              powerVector = powers, 
+                              verbose = 0, 
+                              networkType = "signed", 
+                              RsquaredCut = 0.80)
+
+sft_zebrafish = pickSoftThreshold(zebrafish_genes, 
+                                  powerVector = powers, 
+                                  verbose = 0, 
+                                  networkType = "signed", 
+                                  RsquaredCut = 0.80)
+
+# Plot the results.
+par(mfrow = c(2,2));
+cex1 = 0.9;
+
+# Human: Scale-free topology fit index as a function of the soft-thresholding power
+plot(sft_human$fitIndices[,1], -sign(sft_human$fitIndices[,3])*sft_human$fitIndices[,2],
+     xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n",
+     main = paste("Scale independence"))
+text(sft_human$fitIndices[,1], -sign(sft_human$fitIndices[,3])*sft_human$fitIndices[,2],
+     labels=powers,cex=cex1,col="red")
+# this line corresponds to using an R^2 cut-off of h
+abline(h=0.80,col="red")
+# Mean connectivity as a function of the soft-thresholding power
+plot(sft_human$fitIndices[,1], sft_human$fitIndices[,5],
+     xlab="Soft Threshold (power)",ylab="Mean Connectivity", type="n",
+     main = paste("Mean connectivity"))
+text(sft_human$fitIndices[,1], sft_human$fitIndices[,5], 
+     labels=powers, cex=cex1,col="red")
+
+# Zebrafish: Scale-free topology fit index as a function of the soft-thresholding power
+plot(sft_zebrafish$fitIndices[,1], -sign(sft_zebrafish$fitIndices[,3])*sft_zebrafish$fitIndices[,2],
+     xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n",
+     main = paste("Scale independence"))
+text(sft_zebrafish$fitIndices[,1], -sign(sft_zebrafish$fitIndices[,3])*sft_zebrafish$fitIndices[,2],
+     labels=powers,cex=cex1,col="blue");
+# this line corresponds to using an R^2 cut-off of h
+abline(h=0.80,col="blue")
+# Mean connectivity as a function of the soft-thresholding power
+plot(sft_zebrafish$fitIndices[,1], sft_zebrafish$fitIndices[,5],
+     xlab="Soft Threshold (power)",ylab="Mean Connectivity", type="n",
+     main = paste("Mean connectivity"))
+text(sft_zebrafish$fitIndices[,1], sft_zebrafish$fitIndices[,5], 
+     labels=powers, cex=cex1,col="blue")
+```
+
+The soft power chosen will be `r max(c(sft_human$powerEstimate, sft_zebrafish$powerEstimate))` as this is the minimum one that results in a scale-free network topology *R<sup>2</sup>* value of at least 0.80 for both the zebrafish and human networks. 
+
+### Constructing the co-expression networks
+
+Constructing a co-expression network involves:
+
+1. Calculating an adjacency matrix by first creating a symmetric correlation matrix (where each cell contains the Pearson correlation between the expression of a pair of genes), and then raising these correlations to the soft-thresholding power chosen previously, in this case, `r max(c(sft_human$powerEstimate, sft_zebrafish$powerEstimate))`. We will construct a "signed" network rather than an "unsigned" one due to several benefits of signed networks relating to co-expression networks, such as having more consistent gene rankings between data sets and increased ability to identify functionally enriched modules of genes (see the [technical report](https://labs.genetics.ucla.edu/horvath/CoexpressionNetwork/Rpackages/WGCNA/TechnicalReports/signedTOM.pdf) and [case study](https://labs.genetics.ucla.edu/horvath/CoexpressionNetwork/SignedNetwork/TalkHorvathStemCells.pdf)). 
+2. Restricting the network to genes with higher connectivity. Connectivity describes the number of "connections" (correlation) that a gene has to other genes. Genes with low connectivity do not have much influence in the network and act as noise, so it is desirable to remove them. Here, we will remove the bottom 10% of genes with the lowest connectivites across the human and zebrafish data sets.
+3. Constructing topological overlap matrices (TOM) from the adjacency matrices. Topological overlap is a measure of interconnectedness. While the adjacency matrix considers how related two genes are to each other, the TOM considers how related that pair of genes is to the rest of the network. Genes have high topological overlap if they are connected to the same group of genes in the network ([Yip & Horvath 2007](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1797055/)). 
+4. Constructing a dissimilarity matrix. The dissimilarity is a measure of distance between genes that is calculated by using 1 - TOM. It allows clustering of genes to find "modules" of co-expressed genes. 
+5. Hierarchical clustering of the dissimilarity matrix to identify modules.
+
+These steps to constructing a weighted co-expression network are adapted from tutorials from [Miller](https://labs.genetics.ucla.edu/horvath/htdocs/CoexpressionNetwork/JMiller/) and [Langdelder & Horvath](https://labs.genetics.ucla.edu/horvath/CoexpressionNetwork/Rpackages/WGCNA/Tutorials/). 
+
+```{r Network-Construction, message=FALSE, warning=FALSE}
+
+# 1. Construct adjacency matrices for each dataset, containing each gene's
+# connection strength (similar to correlation) to all other genes. 
+adjacency_human <- adjacency(human_genes, power = 14, type = "signed")
+adjacency_zebrafish <- adjacency(zebrafish_genes, power = 14, type = "signed")
+
+# 2. Calculate whole network connectivity, k, which is defined as the sum of connection
+# strengths to other genes for each sample. 
+connectivity_human <- apply(adjacency_human, 1, sum)
+connectivity_zebrafish <- apply(adjacency_zebrafish, 1, sum)
+
+# Scale connectivity to be between 0 and 1.
+connectivity_human <- connectivity_human/max(connectivity_human)
+connectivity_zebrafish <- connectivity_zebrafish/max(connectivity_zebrafish) 
+
+# Plot scale free topology. 
+# pdf("data/2017-10-09/scale-free-topology-plots.pdf", width = 8, height = 4)
+# par(mfrow=c(1,2), mar=c(4,4,4,4))
+# scaleFreePlot(connectivity_human, main="Human")
+# scaleFreePlot(connectivity_zebrafish, main="Zebrafish")
+# dev.off()
+
+
+# 3. Restrict genes in network to high connectivity genes from either dataset to reduce noise
+# during network construction.
+# Here, high connectivity is defined as being above the 10th percentile.
+minConnections <- 0.1
+sufficientlyConnected <- ((connectivity_human > minConnections) | (connectivity_zebrafish > minConnections))
+# table(sufficientlyConnected) #  genes passing the minimum connectivity threshold. 
+
+# Restrict analysis to  genes which pass the minimum connectivity threshold.
+adjacency_human <- adjacency_human[sufficientlyConnected, sufficientlyConnected]
+adjacency_zebrafish <- adjacency_zebrafish[sufficientlyConnected, sufficientlyConnected]
+human_genes %<>% extract(,rownames(adjacency_human))
+zebrafish_genes %<>% extract(, rownames(adjacency_zebrafish))
+geneCounts <- geneCounts[rownames(adjacency_zebrafish),,keep.lib.sizes = FALSE]
+# summary(colnames(human_genes)==colnames(zebrafish_genes)) #Check that genes are still in same order for both datasets.
+
+# 4. Construct topological overlap matrices for the networks. 
+TOM_human <- TOMsimilarity(adjacency_human, TOMType = "signed", verbose = 0)
+colnames(TOM_human) <- rownames(TOM_human) <- rownames(adjacency_human)
+
+TOM_zebrafish <- TOMsimilarity(adjacency_zebrafish, TOMType = "signed", verbose = 0)
+colnames(TOM_zebrafish) <- rownames(TOM_zebrafish) <- rownames(adjacency_zebrafish)
+
+# 5. Transform the TOM into dissimilarity matrices. 
+dissTOM_human <- 1 - TOM_human
+dissTOM_zebrafish <- 1 - TOM_zebrafish
+
+# 6. Hierarchial clustering of the dissimilarity TOM:
+geneTree_human <- flashClust(as.dist(dissTOM_human), method = "average")
+geneTree_zebrafish <- flashClust(as.dist(dissTOM_zebrafish), method = "average")
+```
+
+### Module Identification
+
+To identify modules of co-expressed genes, we use a Hybrid Tree Cutting method ([Langfelder et al. 2007](https://doi.org/10.1093/bioinformatics/btm563)) to cut branches off the dendrogram. The table in \@ref(tab:Zebrafish-Module-Identification-Table) indicates the number of genes in each module (named by a colour) in the zebrafish gene co-expression network. Note that the "grey" module contains the genes which were unassigned to any module. 
+
+```{r Zebrafish-Module-Identification-Table, message=FALSE}
+# Initialise the color and module eigengene list vectors for the zebrafish dataset. 
+colorList_zebrafish <- list()
+MEList_zebrafish <- list()
+
+
+zebrafishHybridCut <- cutreeHybrid(
+  dendro = geneTree_zebrafish,
+  distM = dissTOM_zebrafish,
+  minClusterSize = 40,
+  deepSplit = 1,
+  pamStage = TRUE,
+  maxPamDist = 0.90,
+  verbose = 0
+)
+
+colorList_zebrafish[["HybridCut"]] <- labels2colors(zebrafishHybridCut$labels)
+
+MEList_zebrafish[["HybridCut"]] <- moduleEigengenes(zebrafish_genes, colorList_zebrafish$HybridCut) %>%
+  use_series("eigengenes") %>%
+  orderMEs()
+
+colorList_zebrafish$HybridCut %>% table %>% as.data.frame %>% 
+  set_colnames(c("Module", "Genes")) %>% dplyr::arrange(desc(Genes)) %>%
+  kable(caption = "Number of genes in each module in the zebrafish brain co-expression network.")
+```
+
+The same process can be applied to the human gene dendrogram to identify modules. The number of modules in the human brain gene co-expression network and the number of genes in eah module is shown in Table @\ref(tab:Human-Module-Identification-Table).
+
+```{r Human-Module-Identification-Table, message=FALSE}
+colorList_human <- list()
+MEList_human <- list()
+
+humanHybridCut <- cutreeHybrid(
+  dendro = geneTree_human,
+  distM = dissTOM_human,
+  minClusterSize = 40,
+  deepSplit = 2,
+  pamStage = TRUE,
+  maxPamDist = 0.90,
+  verbose = 0
+)
+
+colorList_human[["HybridCut"]] <- labels2colors(humanHybridCut$labels)
+
+MEList_human[["HybridCut"]] <- moduleEigengenes(human_genes, colorList_human$HybridCut) %>%
+  use_series("eigengenes") %>%
+  orderMEs()
+
+colorList_human$HybridCut %>% table %>% as.data.frame %>% 
+  set_colnames(c("Module", "Genes")) %>% dplyr::arrange(desc(Genes)) %>%
+  kable(caption = "Number of genes in each module in the human brain co-expression network.")
+```
+
+The dendrograms in Figure \@ref(fig:Plot-Module-Dendrograms) depict the co-expression networks of the zebrafish and human datasets. On these dendrograms, each leaf represents one gene, and the distance indicates the similarity (co-expression) between genes. The colours underneath indicate the modules that genes are assigned to. Grey indicates genes which were not assigned to any particular module.  
+
+```{r Plot-Module-Dendrograms, echo=FALSE, message=FALSE, fig.cap="Gene co-expression network (dendrogram) for the zebrafish and human brain expression datasets. Colours underneath the dendrogram indicate modules of genes showing high co-expression.", eval=FALSE}
+
+colorList_zebrafish[["HumanHybridCut"]] <- matchLabels(colorList_zebrafish$HybridCut, colorList_human$HybridCut)
+colorList_human[["ZebrafishHybridCut"]] <- matchLabels(colorList_human$HybridCut, colorList_zebrafish$HybridCut)
+
+plotDendroAndColors(dendro = geneTree_zebrafish, 
+                    colors = sapply(colorList_zebrafish, cbind), 
+                    groupLabels = colnames(sapply(colorList_zebrafish, cbind)), 
+                    dendroLabels = FALSE, 
+                    hang = 0.03, 
+                    addGuide = TRUE,
+                    guideHang = 0.05, 
+                    main = "Gene dendrogram and module colours (zebrafish)", 
+                    marAll = c(1,8,1,1))
+
+plotDendroAndColors(dendro = geneTree_human, 
+                    colors = sapply(colorList_human, cbind), 
+                    groupLabels = colnames(sapply(colorList_human, cbind)), 
+                    dendroLabels = FALSE, 
+                    hang = 0.03, 
+                    addGuide = TRUE,
+                    guideHang = 0.05, 
+                    main = "Gene dendrogram and module colours (human)", 
+                    marAll = c(1,8,1,1))
+```
+
+```{r Export-Module-Assignment, eval=FALSE, echo=FALSE}
+wgcna_colors <- cbind(geneCounts$genes, colorList_human$HybridCut, colorList_zebrafish$HybridCut) %>% 
+  rownames_to_column("ensembl_gene_id") %>% 
+  left_join(geneExtraInfo) %>% 
+  dplyr::rename(human_module = `colorList_human$HybridCut`, zebrafish_module = `colorList_zebrafish$HybridCut`) 
+```
+
+## Biological Significance of Modules
+
+We will explore the biological significance of modules using two approaches:
+
+1. Functional enrichment analysis (e.g. using GO, KEGG, MSigDB gene sets) and promoter motif enrichment analysis (similar to the Promoter Motif Analysis described above.)
+2. Correlating the module expression with sample traits/characteristics (e.g. whether they are mutant or wild type; whether age is young or aged). 
+
+### Enrichment Analysis
+
+The package *anRichment* will be used for the functional enrichment analysis. *anRichment* supports functional enrichment with Gene Ontology terms (`buildGOCollection`), MSigDB gene sets (`internalCollection`), gene sets associated with particular brain cell types (`SCSBrainCellTypeCollection`) and gene sets associated with particular diseases of the brain (`BrainDiseaseCollection`). It takes up to 10 mins to build all collections.
+
+```{r Setting-Up-For-Enrichment-Analysis, warning=FALSE, message=FALSE}
+# Retrieve information from BioMart about the genes used in the WGCNA Analysis. 
+# geneInfo_zebrafish <- getBM(
+#   attributes = c("ensembl_gene_id", 
+#                  "entrezgene", 
+#                  "go_linkage_type", 
+#                  "description", 
+#                  "gene_biotype"),
+#   filters = c("ensembl_gene_id", 
+#               "with_entrezgene"),
+#   values = list("ensembl_gene_id" = names(zebrafish_genes), 
+#                 "with_entrezgene" = TRUE),
+#   mart = mart) 
+geneInfo_zebrafish <- readRDS(file.path(wgcnaDir, "geneInfo_zebrafish.rds"))
+
+# Extract out genes without GO terms
+noGOGenes <- geneInfo_zebrafish %>% filter(go_linkage_type == "")
+
+# Match genes from the WGCNA analysis with corresponding GO terms.
+# Result is a data.frame arranged in same order as the zebrafish_genes
+# list. Although there are some entrezgene identifiers with NAs, 
+# this is OK since the enrichmentAnalysis function later can remove them.
+matchGenesToGO <- geneInfo_zebrafish %>%
+  filter(go_linkage_type != "", ensembl_gene_id %in% names(zebrafish_genes)) %>%
+  distinct(ensembl_gene_id, .keep_all = TRUE) %>%
+  column_to_rownames("ensembl_gene_id") %>%
+  extract(names(zebrafish_genes), ) %>% #Reorder to match order in zebrafish_genes.
+  rownames_to_column("ensembl_gene_id") %>%
+  set_rownames(names(zebrafish_genes))
+
+# Build the collections of gene sets for over-representation enrichment analysis.
+# Gene ontology collection for zebrafish
+GOcollection <- buildGOcollection(organism = "zebrafish")
+
+# Internal collection of curated pathways provided by anRichment mainly 
+# contains MSigDB gene sets, Reactome sets and KEGG pathways.
+collection <- internalCollection(organism = "zebrafish")
+
+library(SCSBrainCellTypeCollection)
+braincellCollection <- SCSBrainCellTypeCollection(organism = "zebrafish")
+
+library(BrainDiseaseCollection)
+braindiseasecollection <- BrainDiseaseCollection(organism = "zebrafish")
+
+```
+
+Below are some functions to run the `enrichmentAnalysis` function from *anRichment* with particular parameters. 
+
+```{r Enrichment-Analysis-Functions}
+# This is a wrapper for the enrichmentAnalysis function from the anRichment package 
+# for gene ontology analysis (other collections an be specified too)
+GOenrAnalysis <- function(classLabels, collection = GOcollection) {
+  enrichmentAnalysis(
+    classLabels = classLabels,
+    identifiers = matchGenesToGO$entrezgene,
+    useBackground = "intersection",
+    removeMissing = TRUE,
+    getFDR = TRUE,
+    refCollection = GOcollection,
+    maxReportedOverlapGenes = Inf
+  )
+}
+
+# This function takes the output of GOenrAnalysis() and extracts relevant 
+# columns, as well as restricting output to significant results. 
+topAnalysis <- function(x, fdr = 0.05) {
+  x %>% 
+    use_series("enrichmentTable") %>%
+    filter(FDR < fdr) %>% 
+    dplyr::select(class, dataSetID, dataSetName, pValue, FDR, overlapGenes, inGroups, shortDataSetName) %>% 
+    dplyr::rename(Module = class, ID = dataSetID, category = inGroups, name = shortDataSetName,
+                  term = dataSetName, pval = pValue, adj_pval = FDR, genes = overlapGenes) %>%
+    mutate(genes = gsub(x = genes, pattern = "\\|", replacement = ", "),
+           category = gsub(x = category, pattern = "GO\\|GO\\.", replacement = ""),
+           name = gsub(x = name, pattern = "_", replacement = " "))
+}
+```
+
+By applying the above functions to the objects that specify the modules that genes belong to (`colorList_zebrafish` and `colorList_human`), we can determine whether each module is enriched with particular biological functions, processes, gene sets or pathways. 
+
+```{r Enrichment-Analysis-anRichment, message=FALSE, warning=FALSE}
+# GO and MSigDB gene sets
+GOenr_zebrafish <- lapply(colorList_zebrafish, GOenrAnalysis)
+topGOenr_zebrafish <- lapply(GOenr_zebrafish, topAnalysis)
+
+enr_zebrafish <- lapply(colorList_zebrafish, GOenrAnalysis, collection)
+topEnr_zebrafish <- lapply(enr_zebrafish, topAnalysis)
+
+GOenr_human <- lapply(colorList_human, GOenrAnalysis)
+topGOenr_human <- lapply(GOenr_human, topAnalysis)
+
+enr_human <- lapply(colorList_human, GOenrAnalysis, collection)
+topEnr_human <- lapply(enr_human, topAnalysis)
+
+
+#  Cell type enrichment
+cellEnr_zebrafish <- lapply(colorList_zebrafish, GOenrAnalysis, braincellCollection)
+cellEnr_human <- lapply(colorList_human, GOenrAnalysis, braincellCollection)
+
+# Brain disease enrichment. 
+brainEnr_zebrafish <- lapply(colorList_zebrafish, GOenrAnalysis, braindiseasecollection)
+brainEnr_human <- lapply(colorList_human, GOenrAnalysis, braindiseasecollection)
+
+```
+
+```{r Export-AnrichmentResults, eval=FALSE, echo=FALSE}
+exportFunctionalEnrichmentResults <- list(
+  Human_Enrichment = topEnr_human$HybridCut,
+  Fish_Enrichment = topEnr_zebrafish$HybridCut,
+  Human_GO = topGOenr_human$HybridCut,
+  Zebrafish_GO = topGOenr_zebrafish$HybridCut
+)
+writexl::write_xlsx(exportFunctionalEnrichmentResults, file.path(wgcnaDir, "FunctionalEnrichment_anRichment.xlsx"))
+
+exportCellEnrichmentResults <- list(
+  zebrafish_cell = cellEnr_zebrafish$HybridCut$enrichmentTable,
+  human_cell = cellEnr_human$HybridCut$enrichmentTable
+)
+writexl::write_xlsx(exportCellEnrichmentResults, file.path(wgcnaDir, "CellEnrichment_anRichment.xlsx"))
+
+exportBrainDiseaseEnrichmentResults <- list(
+  zebrafish_brainDisease = brainEnr_zebrafish$HybridCut$enrichmentTable,
+  human_brainDisease = brainEnr_human$HybridCut$enrichmentTable
+)
+writexl::write_xlsx(exportBrainDiseaseEnrichmentResults, file.path(wgcnaDir, "BrainDiseaseEnrichment_anRichment.xlsx"))
+```
+
+
+
+### Correlating Module Expression to Sample Traits
+
+```{r Traits-Design-Matrix, echo=FALSE, message=FALSE}
+# Import the sample groupings, aka a design matrix. 
+traits <- readRDS(file.path(dataDir, "de_genes", "designMatrix.rds")) 
+
+traits
+```
+
+The second method for determining whether modules have biological significance is to correlate the overall expression of genes in that module (otherwise known as the first principal component of gene expression in a module, or the "eigengene"), with particular sample traits. In this case, we will define the zebrafish traits using the `design` matrix from the *limma* DE gene analysis, which contains the sample groupings as binary variables. See the design matrix above. 
+Because the sample groupings are encoded as binary variables, correlation isn't strictly an appropriate measure. However, the hybrid robust-Pearson correlation measure by [Horvath (2012)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3465711/) should be OK to use, according to the [WGCNA FAQ](https://labs.genetics.ucla.edu/horvath/CoexpressionNetwork/Rpackages/WGCNA/faq.html) (relevant section below):
+
+<blockquote>
+**Robust correlation**. The default correlation method in all functions in WGCNA is standard Pearson correlation. In general, unless there is good reason to believe that there are no outlier measurements, we recommend (and use ourselves) the biweight mid-correlation as a robust alternative. This is implemented in WGCNA function `bicor`. 
+- **Dealing with binary data**. When relating high-throughput data x to binary variable y such as sample traits, one can use argument robustY = FALSE to turn off the robust treatment for the y argment of bicor. This results in a hybrid robust-Pearson correlation as described in Langfelder and Horvath (2011). The hybrid correlation can also be used when one of the inputs is numeric but known to not have any outliers.
+</blockquote>
+
+We can visualise the correlation between the overall module expression ("eigengene")  and sample traits using a heatmap like that shown in @\ref(fig:Module-Heatmap-Zebrafish).
+
+```{r Module-Heatmap-Zebrafish, echo=FALSE, fig.height=8, fig.cap="Module expression changes (and p-values) between zebrafish samples."}
+# Which MEs to use for calculating correlation with sample groups:
+MEsForHeatmap <- MEList_zebrafish$HybridCut
+
+# Calculate the hybrid-robust correlation (suitable for binary variables 
+# if robustY=FALSE) between the sample groups and module eigengenes.
+moduleTraitCor_HybridCut <- bicorAndPvalue(
+  x = MEsForHeatmap, 
+  y = traits, 
+  robustY = FALSE, 
+  maxPOutliers = 0.05) 
+
+# Create a text matrix with same dimensions as the heatmap, which includes
+# the correlation coefficient and p-value for correlation.
+textMatrix_HybridCut <- paste(signif(moduleTraitCor_HybridCut$bicor, 2), "\n(", 
+                              signif(moduleTraitCor_HybridCut$p, 1), ")", sep = "")
+dim(textMatrix_HybridCut) = dim(moduleTraitCor_HybridCut$bicor)
+
+# Plot the heatmap
+heatmap_hybridCut <- pheatmap(
+  moduleTraitCor_HybridCut$bicor,
+  color = colorRampPalette(c("#10c1e5", "#82e0b4","#F9F9F9", "#FBB829", "#FF0066"))(100), 
+  labels_row = gsub(x = rownames(moduleTraitCor_HybridCut$bicor), pattern = "ME", replacement = ""),
+  border_color = "white", 
+  treeheight_row = 50, 
+  treeheight_col = 0,cutree_rows = 5,
+  clustering_distance_rows = "correlation",
+  clustering_distance_cols = "correlation", 
+  cluster_cols = FALSE, 
+  number_color = "black",
+  cellwidth = 15, 
+  cellheight = 15,
+  fontsize = 5,
+  display_numbers = textMatrix_HybridCut,
+  gaps_col = 2
+  )
+
+```
+
+Likewise, we assess the hybrid robust-Pearson correlation between various human sample characteristics (described below) and the overall module expression, and visualise these results in the heatmap in Figure @\ref(fig:Module-Heatmap-Human).
+
+```{r Module-Heatmap-Human, echo=FALSE, fig.height=6, fig.cap="Module expression changes (and p-values) between human samples."}
+humanSamples <- readRDS(file.path(wgcnaDir, "humanSamples2.rds"))
+
+humanSamples_numeric <- humanSamples %>% 
+  dplyr::select(psen1_mutant, has_AD, apoe_genotype, sex, age_at_death)  %>%
+  mutate(
+    psen1_mutant = as.numeric(psen1_mutant),
+    has_AD = as.numeric(has_AD),
+    apoe_genotype = as.numeric(apoe_genotype),
+    sex = as.numeric(sex),
+    age_at_death=as.numeric(age_at_death)
+  )
+
+#MEList_human <- readRDS("data/2017-09-14/MEList_human.rds") 
+#MEs_human <- MEList_human$HybridCut
+
+humanMEsFromZebrafish <- moduleEigengenes(human_genes, colors = colorList_zebrafish$HumanHybridCut) %>%
+  use_series("eigengenes") %>% orderMEs
+
+moduleTraitCor_human <- bicorAndPvalue(x = MEList_human$HybridCut, y = humanSamples_numeric, robustY = FALSE, maxPOutliers = 0.05) %>% use_series("bicor")
+
+moduleTraitPValue_human <- bicorAndPvalue(x = MEList_human$HybridCut, y = humanSamples_numeric, robustY = FALSE, maxPOutliers = 0.05) %>% use_series("p")
+
+textMatrix_human = paste(signif(moduleTraitCor_human, 2), "\n(", signif(moduleTraitPValue_human, 1), ")", sep = "");
+dim(textMatrix_human) = dim(moduleTraitCor_human)
+
+human_moduletrait_heatmap <- pheatmap::pheatmap(
+  moduleTraitCor_human,
+  color = colorRampPalette(c("#10c1e5", "#82e0b4","#F9F9F9", "#FBB829", "#FF0066"))(100), 
+  labels_row = gsub(x = names(MEList_human$HybridCut), pattern = "ME", replacement = ""),
+  border_color = "white", 
+  treeheight_row = 50, treeheight_col = 0,
+  clustering_distance_rows = "correlation",
+  clustering_distance_cols = "correlation", 
+  cutree_cols = 3, 
+  cluster_cols = FALSE, number_color = "black",
+  cellwidth = 25, cellheight = 25,fontsize = 7,
+  display_numbers = textMatrix_human,
+  cutree_rows = 5
+  )
+```
+
+## Network Preservation
+
+To assess whether peturbations in our zebrafish brains are similar to those that occur in human AD brains, it is essential to compare the preservation of network properties between the zebrafish and human co-expression networks. 
+
+### Network Preservation Statistics
+
+```{r Setup-For-Network-Preservation, include=FALSE}
+library(dplyr)
+library(magrittr)
+library(tibble)
+library(reshape2)
+library(knitr)
+library(kableExtra)
+library(pheatmap)
+library(networkD3)
+```
+
+[Langfelder et al. (2011)](https://doi.org/10.1371/journal.pcbi.1001057) described several network preservation statistics that can be used to assess preservation (reproducibility) of modules in one network in a different network. *Z* statistics for various module properties (e.g. connectivity and density) are calculated using a permutation-based approach. The *Z* statistics are then combined and summarised as a *Z*-summary score. *Z*-summary scores below 2 indicate no evidence of module preservation, scores between 2 and 10 indicate weak to moderate evidence of preservation, and scores above 10 indicate strong preservation. Calculation of these module preservation statistics is implemented in the `modulePreservation` function from *WGCNA*.
+
+To use the `modulePreservation` function, first we construct lists containing gene expression data (`multiExpr`) and gene module assignments (`multiColor`). 
+
+```{r Create-Multi-Expression-Object, eval=FALSE}
+multiExpr = list(zebrafish = list(data = zebrafish_genes),
+                 human = list(data = human_genes))
+
+multiColor = list(zebrafish = colorList_zebrafish$HybridCut,
+                  human = colorList_human$HybridCut)
+```
+
+The module preservation statistics can be calculated as follows. This step takes a couple of hours to run. 
+
+```{r Calculate-Module-Preservation, eval=FALSE}
+# This step takes several hours to run.
+mp <- modulePreservation(multiData = multiExpr, 
+                         multiColor = multiColor, 
+                         referenceNetworks = c(1:2), 
+                         verbose = 3, 
+                         networkType = "signed", 
+                         randomSeed = 1,
+                         nPermutations = 200)
+
+# Save the modulePreservation object to be loaded later. 
+# saveRDS(mp, file.path(wgcnaDir, "mp.rds"))
+```
+
+We will now extract the relevant statistics summarising the preservation of zebrafish modules in the human network. 
+The table in @\ref(tab:Extract-Module-Preservation-Statistics) shows the *Z* preservation statistics for several network properties including the density, connectivity, proportion of variance explained, and the *Z*-summary is a summary statistic that aggregates preservation of all network properties assessed.
+
+```{r Load-Saved-Module-Preservation-Statistics, echo=FALSE}
+mp <- readRDS(file.path(wgcnaDir, "mp.rds"))
+```
+
+```{r Extract-Module-Preservation-Statistics}
+# Extract preservation of zebrafish modules in human network.
+stats_zebrafish <- mp$preservation$Z$ref.zebrafish$inColumnsAlsoPresentIn.human
+stats_zebrafish[order(-stats_zebrafish[,2]),c(1:14)] %>% 
+  kable(digits = 3, format = "html", caption = "Preservation of zebrafish module properties in human co-expression network.") %>% 
+  kableExtra::kable_styling("condensed") %>% scroll_box(width = "909px")
+
+```
+
+From the tables above, several modules have Z-summary scores between 2 and 10, indicating statistically significant weak-to-moderate preservation of zebrafish network properties in the human network.
+
+### Gene Module Overlap
+
+Another way to assess module overlap is by constructing separate networks (using the same genes) for both the zebrafish and human datasets. 
+The `overlapTable` function from *WGCNA* can then be used to calculate overlap counts and Fisher's exact test p-values for the two sets of module assignments. 
+
+```{r Overlap-Table, eval=FALSE}
+# Calculate overlap counts and p-values for the zebrafish and human modules.
+networkOverlap <- overlapTable(colorList_zebrafish$HybridCut, colorList_human$HybridCut)
+
+# Extract the overlap counts and p-values for making a text matrix
+# to overlay on the heatmap. 
+overlapText <- paste(networkOverlap$countTable, "\n(", signif(networkOverlap$pTable, 2), ")", sep="")
+dim(overlapText) = dim(networkOverlap$pTable)
+
+```
+
+```{r Heatmap-Overlap, fig.height=11, fig.cap="Heatmap showing overlap between zebrafish modules (rows) and human modules (columns). "}
+# Using the -log10 p-values, make a heatmap displaying the module overlap results, 
+# along with the text matrix. 
+overlapHeatmap <- pheatmap(
+  mat = -log10(networkOverlap$pTable),
+  color = colorRampPalette(c("#F9F9F9", "#FBB829", "#FF0066"))(100), 
+  border_color = "white", 
+  treeheight_row = 0, 
+  treeheight_col = 0,
+  clustering_distance_rows = "correlation",
+  clustering_distance_cols = "correlation", 
+  cluster_cols = FALSE, 
+  number_color = "black",
+  cellwidth = 30, 
+  cellheight = 30,
+  fontsize = 9,
+  display_numbers = overlapText,
+)
+```
+
+
+### Sankey Diagram
+
+The `sankeyDiagram` function in the *networkD3* package provides an alternate way of visualising the overlap table. 
+First, we prepare two objects, `module_overlap` (containing the "edges", or overlap between modules) and `module_nodes` (containing the "nodes", which in this case are the modules themselves).
+
+```{r Prepare-Sankey-Diagram-Edges-and-Nodes, message=FALSE}
+# Get the p-values from the network overlap object into a suitable format
+# to join onto the count table from the network overlap object. 
+pvals <- networkOverlap$pTable %>% 
+  as.data.frame %>% 
+  rownames_to_column("zebrafishModule") %>% 
+  melt(variable.name = "humanModule", value.name = "pValue")
+  
+# Melt the count table, join the associated p-values, and convert the edges
+# into numeric format starting from 0. This format is required to use the 
+# sankeyNetwork function from the  networkD3 package. To reduce noise in 
+# the Sankey diagram later, we will filter to only retain edges with 
+# p-values < 0.15. 
+module_overlap <- networkOverlap$countTable %>% 
+  as.data.frame %>% 
+  rownames_to_column("zebrafishModule") %>% 
+  melt(variable.name = "humanModule", value.name = "genes") %>%
+  left_join(pvals, by = c("zebrafishModule", "humanModule")) %>%
+  filter(pValue < 0.15) %>%
+  mutate(zebrafishModule = as.factor(zebrafishModule),
+         humanModule = as.factor(humanModule)) %>%
+  mutate(zebrafishModule_num = as.numeric(zebrafishModule)-1,
+         humanModule_num = as.numeric(humanModule)+(length(levels(as.factor(zebrafishModule_num)))-1)) %>%
+  mutate(isSignificant = pValue < 0.05)
+
+# The sankeyNetwork function also requires the names of the network nodes, 
+# which are the gene modules of the zebrafish and human networks. Here,
+# we combine the gene module names from the zebrafish and human networks into
+# a single column data.frame. The order of the gene modules reflects the numeric
+# order defined in the module_overlap object in the zebrafishModule_num and 
+# humanModule_num columns.
+module_nodes <- module_overlap %>%
+  distinct(zebrafishModule, zebrafishModule_num) %>%
+  rbind(module_overlap %>% distinct(humanModule, humanModule_num) %>% dplyr::rename(zebrafishModule = humanModule, zebrafishModule_num = humanModule_num)) %>%
+  dplyr::rename(node = zebrafishModule, num = zebrafishModule_num) %>%
+  dplyr::arrange(num) 
+
+#module_nodes <- read_csv("data/2017-10-11/module_nodes.csv")
+#module_nodes$Group_num %<>% as.factor
+
+```
+
+The Sankey Diagram can now be visualised.
+
+```{r Sankey-Diagram, fig.height=11}
+# Using the module_overlap (edges) and module_nodes (nodes), we can now 
+# construct the Sankey diagram. A custom colour palette will be defined to 
+# reflect the gene modules. 
+
+sankeyNetwork(Links = module_overlap, 
+              Nodes = module_nodes, 
+              Source = "zebrafishModule_num", 
+              Target = "humanModule_num", 
+              Value = "genes", 
+              NodeID = "node",
+              units = "genes", 
+              fontSize = 12,
+              width = 909,
+              height = 1200,
+              fontFamily = "Helvetica",
+              LinkGroup = "zebrafishModule",
+              nodeWidth = 30, 
+              iterations = 500,
+              nodePadding = 10,
+              colourScale = JS("d3.scaleOrdinal().range(['black', '#2196F3', '#8D6E63', '#18FFFF', '#00C853', '#B71C1C', '#00838F', '#8BC34A', 'greenyellow', '#9E9E9E', '#455A64', '#84FFFF', '#FFEB3B', '#FF4081', 'midnightblue', '#F48FB1', '#7E57C2', '#F44336', 'royalblue', 'salmon', 'tan', 'turquoise', '#FDD835']).domain(['black', 'blue', 'brown', 'cyan', 'darkgreen', 'darkred', 'darkturquoise', 'green', 'greenyellow', 'grey', 'grey60', 'lightcyan', 'lightyellow', 'magenta', 'midnightblue', 'pink', 'purple', 'red', 'royalblue', 'salmon', 'tan', 'turquoise', 'yellow'])"))
+
+```
+
+
+<!--chapter:end:05-WGCNA.Rmd-->
+

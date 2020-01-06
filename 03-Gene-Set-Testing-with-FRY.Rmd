@@ -1,0 +1,534 @@
+# Gene Set Testing Analysis 
+
+```{r Setup-For-Gene-Set-Analysis, include=FALSE}
+# Load Packages:
+# Data manipulation
+library(readr)
+library(dplyr)
+library(magrittr)
+library(tibble)
+
+# Analysis
+library(GSEABase) #Import .gmt gene sets
+library(org.Dr.eg.db)
+library(org.Hs.eg.db)
+library(limma)
+library(biomaRt)
+
+# Data Directories
+dataDir <- file.path(getwd(), "data")
+genesetsDir <- file.path(dataDir, "genesets")
+
+# Database objects
+mart <- readRDS(file.path(dataDir, "db", "mart.rds")) # Zebrafish BioMart object
+up <- readRDS(file.path(dataDir, "db", "up.rds")) # Zebrafish UniProt.ws object
+huMart <- readRDS(file.path(dataDir, "db", "huMart.rds")) # Human BioMart object
+
+# Load saved objects from DE analysis with limma
+geneCounts <- readRDS(file.path(dataDir, "de_genes", "geneCounts.rds"))
+voomData <- readRDS(file.path(dataDir, "de_genes", "voomData.rds"))
+
+voomData <- voomData_g
+geneCounts <- dge_g
+                    
+```
+
+A gene set is a group of genes that contribute to a predefined biological function, pathway, or state. 
+A gene set test is an analysis used to evaluate whether a particular gene set is differentially expressed for a particular comparison. 
+
+The *limma* package (used in the differential gene expression analysis) supports a variety of gene set test methods. In this analysis, we will use the rotation gene set testing method which is implemented in the the `roast`/`mroast`/`fry` functions ([Wu et al. 2010](http://doi.org/10.1093/bioinformatics/btq401); [Giner & Smyth 2016](https://f1000research.com/slides/5-2605) ).
+
+## Import Gene Sets from MSigDB
+
+The following gene sets were downloaded as .gmt files from [MSigDB](http://software.broadinstitute.org/gsea/downloads.jsp) and imported using the `getGmt` function from the *GSEABase* package.
+
+```{r Import-MSigDB-Genesets, cache=TRUE, message=FALSE, warning=FALSE}
+h <- getGmt(file.path(genesetsDir, "h.all.v6.0.entrez.gmt")) # Hallmark gene sets
+c1 <- getGmt(file.path(genesetsDir, "c1.all.v6.0.entrez.gmt")) # positional gene sets
+c2 <- getGmt(file.path(genesetsDir, "c2.all.v6.0.entrez.gmt")) # curated gene sets
+c3 <- getGmt(file.path(genesetsDir, "c3.all.v6.0.entrez.gmt")) # motif gene sets
+c4 <- getGmt(file.path(genesetsDir, "c4.all.v6.0.entrez.gmt")) # computational gene sets
+c5 <- getGmt(file.path(genesetsDir, "c5.all.v6.0.entrez.gmt")) # GO gene sets
+c6 <- getGmt(file.path(genesetsDir, "c6.all.v6.0.entrez.gmt")) # oncogenic signatures gene sets
+c7 <- getGmt(file.path(genesetsDir, "c7.all.v6.0.entrez.gmt")) #  immunologic signatures gene sets
+
+
+# Convert gene sets to list where the name of each list is the gene set
+# name and the list items are the entrezgenes. 
+h_l <- geneIds(h) %>% as.list
+c1_l <- geneIds(c1) %>% as.list
+c2_l <- geneIds(c2) %>% as.list
+c3_l <- geneIds(c3) %>% as.list
+c4_l <- geneIds(c4) %>% as.list
+c5_l <- geneIds(c5) %>% as.list
+c6_l <- geneIds(c6) %>% as.list
+c7_l <- geneIds(c7) %>% as.list
+
+
+# Bind the list of gene sets so that each list becomes a data.frame.
+h_df <- lapply(h_l, cbind)
+c1_df <- lapply(c1_l, cbind)
+c2_df <- lapply(c2_l, cbind)
+c3_df <- lapply(c3_l, cbind)
+c4_df <- lapply(c4_l, cbind)
+c5_df <- lapply(c5_l, cbind)
+c6_df <- lapply(c6_l, cbind)
+c7_df <- lapply(c7_l, cbind)
+```
+
+
+## Map Human entrezgenes to Zebrafish entrezgenes
+
+In the MSigDB gene sets, the genes are specified as human entrezgene identifiers. Because our differential expression analysis in zebrafish uses zebrafish Ensembl identifiers, and the gene set testing functions in *limma* support entrezgene identifiers only, we need a way to map between human and zebrafish entrezgenes. 
+
+```{r Map-Human-Entrezgene-to-Zebrafish-Entrezgene, warning=FALSE, message=FALSE, error=FALSE}
+# Make data.frames that contain mappings from human entrezgenes to
+# zebrafish entrezgenes. 
+humanEntrezToEns <- as.data.frame(org.Hs.egENSEMBL2EG)
+
+zebrafishEntrezToEns <- as.data.frame(org.Dr.egENSEMBL2EG) %>% 
+  dplyr::rename(zebrafish_entrezgene = gene_id, 
+                zebrafish_ensembl_id = ensembl_id)
+
+# Using human Ensembl genes, retrieve homologous zebrafish genes. 
+# humanToZeb <- getBM(attributes = c("ensembl_gene_id", "drerio_homolog_ensembl_gene"), mart = huMart)
+# Join the Ensembl genes from the Biomart query before onto the entrezgene mmappings.
+# Then filter to only keep genes which are present in both humans and zebrafish.
+# humanToZeb %<>% left_join(humanEntrezToEns, by = c("ensembl_gene_id"="ensembl_id")) %>% 
+#   dplyr::rename(entrezgene = gene_id) %>%
+#   left_join(zebrafishEntrezToEns, by = c("drerio_homolog_ensembl_gene"="zebrafish_ensembl_id")) %>%
+#   filter(entrezgene != "", zebrafish_entrezgene != "")
+
+# Save the humanToZeb data.frame as an R object. For some reason 
+# sometimes Biomart doesn't seem to connect reliably, so may as well save and load
+# while we can. 
+# saveRDS(humanToZeb, file.path(genesetsDir, "humanToZeb.rds"))
+humanToZeb <- readRDS(file.path(genesetsDir, "humanToZeb.rds"))
+
+# Make a version of the data.frame with only the entrezgene mappings. 
+humanToZeb2 <- humanToZeb %>% dplyr::select(entrezgene, zebrafish_entrezgene)
+```
+
+```{r Convert-Human-Genesets-to-Zebrafish-Orthologs, message=FALSE, warning=FALSE}
+# This function takes as input the genesets.df created from the genesets.
+# It converts the human entrezgenes for each gene set into zebrafish 
+# homologs, and removes genes which didn't map. 
+# Output is given as a list of gene sets in similar format to 
+# the original genesets object imported at the beginning
+# of this analysis. 
+# I know my code sucks, sorry about that. 
+
+mapHumanGS2Zebrafish <- function(x) {
+  x %>% 
+    as.data.frame %>% 
+    set_colnames("x") %>%
+    left_join(humanToZeb2, by = c("x"="entrezgene")) %>% 
+    filter(complete.cases(.)) %>%
+    dplyr::select(-x) %>%
+    dplyr::rename(x = zebrafish_entrezgene) %>%
+    as.list %>%
+    unname
+}
+
+# This may take about 30 mins to run. To save time, 
+# I saved the mapped objects as R objects.
+# h_mapped <- lapply(h_df, mapHumanGS2Zebrafish)
+# c1_mapped <- lapply(c1_df, mapHumanGS2Zebrafish)
+# c2_mapped <- lapply(c2_df, mapHumanGS2Zebrafish)
+# c3_mapped <- lapply(c3_df, mapHumanGS2Zebrafish)
+# c4_mapped <- lapply(c4_df, mapHumanGS2Zebrafish)
+# c5_mapped <- lapply(c5_df, mapHumanGS2Zebrafish)
+# c6_mapped <- lapply(c6_df, mapHumanGS2Zebrafish)
+# c7_mapped <- lapply(c7_df, mapHumanGS2Zebrafish)
+
+h_mapped %>% saveRDS(file.path(dir, "h_mapped.rds"))
+ c1_mapped %>% saveRDS(file.path(dir, "c1_mapped.rds"))
+ c2_mapped %>% saveRDS(file.path(dir, "c2_mapped.rds"))
+ c3_mapped %>% saveRDS(file.path(dir, "c3_mapped.rds"))
+ c4_mapped %>% saveRDS(file.path(dir, "c4_mapped.rds"))
+ c5_mapped %>% saveRDS(file.path(dir, "c5_mapped.rds"))
+ c6_mapped %>% saveRDS(file.path(dir, "c6_mapped.rds"))
+ c7_mapped %>% saveRDS(file.path(dir, "c7_mapped.rds"))
+
+
+# Load in the saved R objects. 
+h_mapped <- readRDS(file.path(genesetsDir, "h_mapped.rds"))
+c1_mapped <- readRDS(file.path(genesetsDir, "c1_mapped.rds"))
+c2_mapped <- readRDS(file.path(genesetsDir, "c2_mapped.rds"))
+c3_mapped <- readRDS(file.path(genesetsDir, "c3_mapped.rds"))
+c4_mapped <- readRDS(file.path(genesetsDir, "c4_mapped.rds"))
+c5_mapped <- readRDS(file.path(genesetsDir, "c5_mapped.rds"))
+c6_mapped <- readRDS(file.path(genesetsDir, "c6_mapped.rds"))
+c7_mapped <- readRDS(file.path(genesetsDir, "c7_mapped.rds"))
+
+```
+
+## Convert voom object (DE gene analysis) Ensembl gene IDs to entrezgenes
+```{r Convert-VoomObject-Ensembl-To-Entrezgene}
+# ensembl2Entrez is a data.frame made using getBM from BioMart to retrieve all 
+# ensembl id to entrezgene mappings. Here, we filter to keep only one
+# entrezgene and ensembl id, and then reorder the rows to match the 
+# voomData object. 
+# ensembl2Entrez <- readRDS("data/2017-08-20/ensembl2Entrez.rds")
+ensembl2Entrez <- humanToZeb %>% dplyr::select(zebrafish_entrezgene, drerio_homolog_ensembl_gene) %>%
+  dplyr::rename(ensembl_gene_id = drerio_homolog_ensembl_gene, entrezgene = zebrafish_entrezgene)
+
+ensembl2Entrez %<>% filter(ensembl_gene_id %in% rownames(geneCounts)) %>%
+  distinct(ensembl_gene_id, .keep_all=TRUE) %>%
+  distinct(entrezgene, .keep_all=TRUE)%>%
+  filter(!is.na(entrezgene)) %>%
+  set_rownames(.$ensembl_gene_id) %>%
+  magrittr::extract(rownames(voomData), ) 
+
+# Create a copy of the voomData object which has entrezgene identifiers
+# as rownames instead of ensembl gene ids. 
+voomData_with_entrez <- voomData %>% set_rownames(ensembl2Entrez$entrezgene) 
+
+```
+
+## Build gene set indexes
+
+```{r Build-Geneset-Index, warning=FALSE, message=FALSE}
+# This section is adapted from the tutorial here:
+# https://genomicsclass.github.io/book/pages/bioc1_roast.html
+
+# ---------------------------------------------------------------------------------------------------#
+
+# The following function is used to build an index using the mapHumanGS2Zebrafish function 
+# earlier. It also requires a voom object from DE gene analysis with limma. 
+# Output is the index ready for use with camera, mroast, or fry. 
+# Note that this function produces a warning about split when run. This is OK and doesn't
+# seem to affect the result. 
+buildGenesetIndex <- function(x, voomObj = voomData_with_entrez, minGenes = 10) {
+  genesets2eg <- as.list(x)
+  
+  # Get the frequency of each gene set.
+  genesetsVector <- unlist(genesets2eg)
+  genesetsLengths <- sapply(genesets2eg, length)
+  
+  # Create index of gene set to entrezgene
+  genesetsidxVector <- match(genesetsVector, rownames(voomObj)) %>%
+    set_names(names(genesetsVector))
+  
+  # create index of genes associated with each gene set
+  genesetsidx <- split(genesetsidxVector, rep(names(genesets2eg), genesetsLengths))
+  
+  # filtering to remove NA values and retain sufficiently large gene sets
+  genesetsidxclean <- lapply(genesetsidx, function(x) x[!is.na(x)])
+  genesetsidxlengths <- sapply(genesetsidxclean, length)
+  genesetsidxsub <- genesetsidxclean[genesetsidxlengths > minGenes]
+  
+  return(genesetsidxsub)
+}
+
+h_idx <- buildGenesetIndex(h_mapped)
+c1_idx <- buildGenesetIndex(c1_mapped)
+c2_idx <- buildGenesetIndex(c2_mapped)
+c3_idx <- buildGenesetIndex(c3_mapped)
+c4_idx <- buildGenesetIndex(c4_mapped)
+c5_idx <- buildGenesetIndex(c5_mapped)
+c6_idx <- buildGenesetIndex(c6_mapped)
+c7_idx <- buildGenesetIndex(c7_mapped)
+```
+
+This is a function to get the top genesets from a gene set test object returned by `fry` or `mroast`. It returns the genesets with FDR-adjusted p-values below the significance level, in this case 0.05. Here, we define significance using the "Mixed FDR", which doesn't take into account direction. For example, a gene set can still be considered differentially expressed as long as the genes it contains seem to be significantly altered in up or down directions. Not all genes have to be significantly altered in the same direction. We use the Mixed FDR instead of the single-direction FDR returned by `fry` because some gene sets (especially ones defining genes associated with or involved in particular biological or cellular pathways) often contain both positive and negative regulators. 
+
+```{r Function-to-get-top-genesets-from-test}
+topGSTest <- function(x, p = 0.05) {
+  x %>%
+    rownames_to_column("geneset") %>%
+    filter(FDR.Mixed<p|FDR<p) %>%
+    arrange(FDR.Mixed)
+}
+
+```
+
+## Fast Rotation Gene Set Analysis (`fry`)
+Use the `fry` method from *limma* to do fast rotation gene set analysis.  This is a faster approximation of ROAST which produces higher resolution *p*-values that allow the gene set results to be sorted and ranked. We will test each group of gene sets separately for each contrast. In total, using `fry` takes a couple of mins, but `mroast` takes at least an hour for each gene set index (when using 9,999 rotations).
+
+```{r Fry-Analysis, cache=TRUE, message=FALSE, warning=FALSE}
+# Basically what I did was save the voomData from the Q96K97 DE analysis, ran the above code, and used the design_g and contrasts_g. 
+fry_results_h_q96 <- lapply(colnames(contrasts_g), function(x){
+  fry(voomData_with_entrez, index = h_idx, design = design_g, contrast = contrasts_g[, x])
+})
+names(fry_results_h_q96) <- colnames(contrasts_g)
+
+fry_results_h_q96_mr <- lapply(colnames(contrasts_g), function(x){
+  mroast(voomData_with_entrez, index = h_idx, design = design_g, contrast = contrasts_g[, x])
+})
+names(fry_results_h_q96_mr) <- colnames(contrasts_g)
+
+fry_results_c5_q96 <- lapply(colnames(contrasts_g), function(x){
+  fry(voomData_with_entrez, index = h_idx, design = design_g, contrast = contrasts_g[, x])
+})
+names(fry_results_c5_q96) <- colnames(contrasts_g)
+
+
+# fry_results_h_q96 <- list(
+#   normoxia_6mth_mutant_vs_wt = fry(voomData_with_entrez, 
+#                                    index = h_idx, design = design_g, 
+#                                    contrast = contrasts_g[, c("normoxia_6mth_mutant_vs_wt")]),
+#   normoxia_24mth_mutant_vs_wt = fry(voomData_with_entrez, 
+#                                    index = h_idx, design = design_g, 
+#                                    contrast = contrasts_g[, c("normoxia_24mth_mutant_vs_wt")]),
+#   wt_6mth_hypoxia_vs_normoxia = fry(voomData_with_entrez,
+#                                      index = h_idx, design = design_g, 
+#                                      contrast = contrasts_g[, c("wt_6mth_hypoxia_vs_normoxia")]),
+#   wt_24mth_hypoxia_vs_normoxia = fry(voomData_with_entrez,
+#                                      index = h_idx, design = design_g, 
+#                                      contrast = contrasts_g[, c("wt_24mth_hypoxia_vs_normoxia")]),
+#   normoxia_wtAging = fry(voomData_with_entrez,
+#                          index = h_idx, design = design_g,
+#                          contrast = contrasts_g[, c("normoxia_wtAging")]),
+#   normoxia_mutantAging = fry(voomData_with_entrez,
+#                          index = h_idx, design = design_g,
+#                          contrast = contrasts_g[, c("normoxia_mutantAging")])
+  
+)
+#saveRDS(voomData_with_entrez, "~/Box/Projects/1_Q96K97/ire_enrichment/voomData_with_entrez.rds")
+#saveRDS(design_g, "~/Box/Projects/1_Q96K97/ire_enrichment/design_g.rds")
+#saveRDS(contrasts_g, "~/Box/Projects/1_Q96K97/ire_enrichment/contrasts_g.rds")
+# saveRDS(fry_results_h_q96, "~/Box/Projects/1_Q96K97/ire_enrichment/fry_results_h_q96.rds")
+
+# fry_results_c2_q96 <- list(
+#   normoxia_6mth_mutant_vs_wt = fry(voomData_with_entrez, 
+#                                    index = c2_idx, design = design_g, 
+#                                    contrast = contrasts_g[, c("normoxia_6mth_mutant_vs_wt")]),
+#   normoxia_24mth_mutant_vs_wt = fry(voomData_with_entrez, 
+#                                    index = c2_idx, design = design_g, 
+#                                    contrast = contrasts_g[, c("normoxia_24mth_mutant_vs_wt")]),
+#   wt_6mth_hypoxia_vs_normoxia = fry(voomData_with_entrez,
+#                                      index = c2_idx, design = design_g, 
+#                                      contrast = contrasts_g[, c("wt_6mth_hypoxia_vs_normoxia")]),
+#   wt_24mth_hypoxia_vs_normoxia = fry(voomData_with_entrez,
+#                                      index = c2_idx, design = design_g, 
+#                                      contrast = contrasts_g[, c("wt_24mth_hypoxia_vs_normoxia")]),
+#   normoxia_wtAging = fry(voomData_with_entrez,
+#                          index = c2_idx, design = design_g,
+#                          contrast = contrasts_g[, c("normoxia_wtAging")]),
+#   normoxia_mutantAging = fry(voomData_with_entrez,
+#                          index = c2_idx, design = design_g,
+#                          contrast = contrasts_g[, c("normoxia_mutantAging")])
+  
+)
+
+fry_results_c5_q96 <- list(
+  normoxia_6mth_mutant_vs_wt = fry(voomData_with_entrez, 
+                                   index = c5_idx, design = design_g, 
+                                   contrast = contrasts_g[, c("normoxia_6mth_mutant_vs_wt")]),
+  normoxia_24mth_mutant_vs_wt = fry(voomData_with_entrez, 
+                                   index = c5_idx, design = design_g, 
+                                   contrast = contrasts_g[, c("normoxia_24mth_mutant_vs_wt")]),
+  wt_6mth_hypoxia_vs_normoxia = fry(voomData_with_entrez,
+                                     index = c5_idx, design = design_g, 
+                                     contrast = contrasts_g[, c("wt_6mth_hypoxia_vs_normoxia")]),
+  wt_24mth_hypoxia_vs_normoxia = fry(voomData_with_entrez,
+                                     index = c5_idx, design = design_g, 
+                                     contrast = contrasts_g[, c("wt_24mth_hypoxia_vs_normoxia")]),
+  normoxia_wtAging = fry(voomData_with_entrez,
+                         index = c5_idx, design = design_g,
+                         contrast = contrasts_g[, c("normoxia_wtAging")]),
+  normoxia_mutantAging = fry(voomData_with_entrez,
+                         index = c5_idx, design = design_g,
+                         contrast = contrasts_g[, c("normoxia_mutantAging")])
+  
+)
+####
+
+fry_results_h <- list(
+  K97_mutYoung_wtYoung = fry(voomData_with_entrez, index = h_idx, design = design, contrast = contrasts[, c("K97_mutYoung_wtYoung")]),
+  K97_mutOld_wtOld = fry(voomData_with_entrez, index = h_idx, design = design, contrast = contrasts[, c("K97_mutOld_wtOld")]),
+  K97_mutOld_mutYoung = fry(voomData_with_entrez, index = h_idx, design = design, contrast = contrasts[, c("K97_mutOld_mutYoung")]),
+  K97_wtOld_wtYoung = fry(voomData_with_entrez, index = h_idx, design = design, contrast = contrasts[, c("K97_wtOld_wtYoung")])
+)
+
+fry_results_c1 <- list(
+  K97_mutYoung_wtYoung = fry(voomData_with_entrez, index = c1_idx, design = design, contrast = contrasts[, c("K97_mutYoung_wtYoung")]),
+  K97_mutOld_wtOld = fry(voomData_with_entrez, index = c1_idx, design = design, contrast = contrasts[, c("K97_mutOld_wtOld")]),
+  K97_mutOld_mutYoung = fry(voomData_with_entrez, index = c1_idx, design = design, contrast = contrasts[, c("K97_mutOld_mutYoung")]),
+  K97_wtOld_wtYoung = fry(voomData_with_entrez, index = c1_idx, design = design, contrast = contrasts[, c("K97_wtOld_wtYoung")])
+)
+
+fry_results_c2 <- list(
+  K97_mutYoung_wtYoung = fry(voomData_with_entrez, index = c2_idx, design = design, contrast = contrasts[, c("K97_mutYoung_wtYoung")]),
+  K97_mutOld_wtOld = fry(voomData_with_entrez, index = c2_idx, design = design, contrast = contrasts[, c("K97_mutOld_wtOld")]),
+  K97_mutOld_mutYoung = fry(voomData_with_entrez, index = c2_idx, design = design, contrast = contrasts[, c("K97_mutOld_mutYoung")]),
+  K97_wtOld_wtYoung = fry(voomData_with_entrez, index = c2_idx, design = design, contrast = contrasts[, c("K97_wtOld_wtYoung")])
+)
+
+fry_results_c3 <- list(
+  K97_mutYoung_wtYoung = fry(voomData_with_entrez, index = c3_idx, design = design, contrast = contrasts[, c("K97_mutYoung_wtYoung")]),
+  K97_mutOld_wtOld = fry(voomData_with_entrez, index = c3_idx, design = design, contrast = contrasts[, c("K97_mutOld_wtOld")]),
+  K97_mutOld_mutYoung = fry(voomData_with_entrez, index = c3_idx, design = design, contrast = contrasts[, c("K97_mutOld_mutYoung")]),
+  K97_wtOld_wtYoung = fry(voomData_with_entrez, index = c3_idx, design = design, contrast = contrasts[, c("K97_wtOld_wtYoung")])
+)
+
+fry_results_c4 <- list(
+  K97_mutYoung_wtYoung = fry(voomData_with_entrez, index = c4_idx, design = design, contrast = contrasts[, c("K97_mutYoung_wtYoung")]),
+  K97_mutOld_wtOld = fry(voomData_with_entrez, index = c4_idx, design = design, contrast = contrasts[, c("K97_mutOld_wtOld")]),
+  K97_mutOld_mutYoung = fry(voomData_with_entrez, index = c4_idx, design = design, contrast = contrasts[, c("K97_mutOld_mutYoung")]),
+  K97_wtOld_wtYoung = fry(voomData_with_entrez, index = c4_idx, design = design, contrast = contrasts[, c("K97_wtOld_wtYoung")])
+)
+
+fry_results_c5 <- list(
+  K97_mutYoung_wtYoung = fry(voomData_with_entrez, index = c5_idx, design = design, contrast = contrasts[, c("K97_mutYoung_wtYoung")]),
+  K97_mutOld_wtOld = fry(voomData_with_entrez, index = c5_idx, design = design, contrast = contrasts[, c("K97_mutOld_wtOld")]),
+  K97_mutOld_mutYoung = fry(voomData_with_entrez, index = c5_idx, design = design, contrast = contrasts[, c("K97_mutOld_mutYoung")]),
+  K97_wtOld_wtYoung = fry(voomData_with_entrez, index = c5_idx, design = design, contrast = contrasts[, c("K97_wtOld_wtYoung")])
+)
+
+fry_results_c6 <- list(
+  K97_mutYoung_wtYoung = fry(voomData_with_entrez, index = c6_idx, design = design, contrast = contrasts[, c("K97_mutYoung_wtYoung")]),
+  K97_mutOld_wtOld = fry(voomData_with_entrez, index = c6_idx, design = design, contrast = contrasts[, c("K97_mutOld_wtOld")]),
+  K97_mutOld_mutYoung = fry(voomData_with_entrez, index = c6_idx, design = design, contrast = contrasts[, c("K97_mutOld_mutYoung")]),
+  K97_wtOld_wtYoung = fry(voomData_with_entrez, index = c6_idx, design = design, contrast = contrasts[, c("K97_wtOld_wtYoung")])
+)
+
+fry_results_c7 <- list(
+  K97_mutYoung_wtYoung = fry(voomData_with_entrez, index = c7_idx, design = design, contrast = contrasts[, c("K97_mutYoung_wtYoung")]),
+  K97_mutOld_wtOld = fry(voomData_with_entrez, index = c7_idx, design = design, contrast = contrasts[, c("K97_mutOld_wtOld")]),
+  K97_mutOld_mutYoung = fry(voomData_with_entrez, index = c7_idx, design = design, contrast = contrasts[, c("K97_mutOld_mutYoung")]),
+  K97_wtOld_wtYoung = fry(voomData_with_entrez, index = c7_idx, design = design, contrast = contrasts[, c("K97_wtOld_wtYoung")])
+)
+
+# ---------------------------------------------------------------------------------------------------#
+# Store the FRY gene set test results in a list.
+# This list object can be saved and read more easily in future.
+fry_results_all <- list(h = fry_results_h, 
+                        c1 = fry_results_c1, 
+                        c2 = fry_results_c2, 
+                        c3 = fry_results_c3, 
+                        c4 = fry_results_c4, 
+                        c5 = fry_results_c5,
+                        c6 = fry_results_c6, 
+                        c7 = fry_results_c7)
+
+
+# Get the top genesets for each test.
+fry_results_top <- lapply(fry_results_all, lapply, topGSTest)
+```
+
+## Use `roast` function to obtain estimate proportions of up and down-regulated genes
+FRY doesn't output the PropUp and PropDown columns like the mroast or roast functions since
+this is probably computationally expensive. If we restrict the estimation of PropUp and
+PropDown to the top gene sets only, then the time it takes to run is reasonable.
+Input for this function, testresults is a df which is the result of topGSTest, along
+with the index file used and the contrast to test.
+
+```{r Use-Roast-to-Obtain-Proportions, cache=TRUE}
+
+useRoastForPropUpDown <- function(testresults, idx, contrastToTest, voomObj = voomData_with_entrez) {
+  genesets <- testresults %>% use_series("geneset")
+  idx_subset <- idx %>% extract(genesets)
+  
+  roasted <- mroast(voomObj, index = idx_subset, design, contrast = contrastToTest, nrot = 9999) %>%
+    rownames_to_column("geneset") %>%
+    dplyr::select(geneset, contains("Prop"))
+  
+  testresults <- left_join(testresults, roasted, by = "geneset")
+  
+  return(testresults)
+}
+
+# ---------------------------------------------------------------------------------------------------#
+# Sorry, I know this code sucks and is clunky, but not sure how to improve it atm...
+# Prepare about 30 mins for this to run all gene sets. Here I'm only running the Hallmark gene 
+# sets. 
+
+fry_results_top$h$K97_mutYoung_wtYoung %<>% useRoastForPropUpDown(h_idx, contrasts[, c("K97_mutYoung_wtYoung")])
+fry_results_top$h$K97_mutOld_wtOld %<>% useRoastForPropUpDown(h_idx, contrasts[, c("K97_mutOld_wtOld")])
+fry_results_top$h$K97_mutOld_mutYoung %<>% useRoastForPropUpDown(h_idx, contrasts[, c("K97_mutOld_mutYoung")])
+fry_results_top$h$K97_wtOld_wtYoung %<>% useRoastForPropUpDown(h_idx, contrasts[, c("K97_wtOld_wtYoung")])
+
+# fry_results_top$c1$K97_mutYoung_wtYoung %<>% useRoastForPropUpDown(c1_idx, contrasts[, c("K97_mutYoung_wtYoung")])
+# fry_results_top$c1$K97_mutOld_wtOld %<>% useRoastForPropUpDown(c1_idx, contrasts[, c("K97_mutOld_wtOld")])
+# fry_results_top$c1$K97_mutOld_mutYoung %<>% useRoastForPropUpDown(c1_idx, contrasts[, c("K97_mutOld_mutYoung")])
+# fry_results_top$c1$K97_wtOld_wtYoung %<>% useRoastForPropUpDown(c1_idx, contrasts[, c("K97_wtOld_wtYoung")])
+# 
+# fry_results_top$c2$K97_mutYoung_wtYoung %<>% useRoastForPropUpDown(c2_idx, contrasts[, c("K97_mutYoung_wtYoung")])
+# fry_results_top$c2$K97_mutOld_wtOld %<>% useRoastForPropUpDown(c2_idx, contrasts[, c("K97_mutOld_wtOld")])
+# fry_results_top$c2$K97_mutOld_mutYoung %<>% useRoastForPropUpDown(c2_idx, contrasts[, c("K97_mutOld_mutYoung")])
+# fry_results_top$c2$K97_wtOld_wtYoung %<>% useRoastForPropUpDown(c2_idx, contrasts[, c("K97_wtOld_wtYoung")])
+# 
+# fry_results_top$c3$K97_mutYoung_wtYoung %<>% useRoastForPropUpDown(c3_idx, contrasts[, c("K97_mutYoung_wtYoung")])
+# fry_results_top$c3$K97_mutOld_wtOld %<>% useRoastForPropUpDown(c3_idx, contrasts[, c("K97_mutOld_wtOld")])
+# fry_results_top$c3$K97_mutOld_mutYoung %<>% useRoastForPropUpDown(c3_idx, contrasts[, c("K97_mutOld_mutYoung")])
+# fry_results_top$c3$K97_wtOld_wtYoung %<>% useRoastForPropUpDown(c3_idx, contrasts[, c("K97_wtOld_wtYoung")])
+# 
+# fry_results_top$c4$K97_mutYoung_wtYoung %<>% useRoastForPropUpDown(c4_idx, contrasts[, c("K97_mutYoung_wtYoung")])
+# fry_results_top$c4$K97_mutOld_wtOld %<>% useRoastForPropUpDown(c4_idx, contrasts[, c("K97_mutOld_wtOld")])
+# fry_results_top$c4$K97_mutOld_mutYoung %<>% useRoastForPropUpDown(c4_idx, contrasts[, c("K97_mutOld_mutYoung")])
+# fry_results_top$c4$K97_wtOld_wtYoung %<>% useRoastForPropUpDown(c4_idx, contrasts[, c("K97_wtOld_wtYoung")])
+# 
+# fry_results_top$c5$K97_mutYoung_wtYoung %<>% useRoastForPropUpDown(c5_idx, contrasts[, c("K97_mutYoung_wtYoung")])
+# fry_results_top$c5$K97_mutOld_wtOld %<>% useRoastForPropUpDown(c5_idx, contrasts[, c("K97_mutOld_wtOld")])
+# fry_results_top$c5$K97_mutOld_mutYoung %<>% useRoastForPropUpDown(c5_idx, contrasts[, c("K97_mutOld_mutYoung")])
+# fry_results_top$c5$K97_wtOld_wtYoung %<>% useRoastForPropUpDown(c5_idx, contrasts[, c("K97_wtOld_wtYoung")])
+# 
+# fry_results_top$c6$K97_mutYoung_wtYoung %<>% useRoastForPropUpDown(c6_idx, contrasts[, c("K97_mutYoung_wtYoung")])
+# fry_results_top$c6$K97_mutOld_wtOld %<>% useRoastForPropUpDown(c6_idx, contrasts[, c("K97_mutOld_wtOld")])
+# fry_results_top$c6$K97_mutOld_mutYoung %<>% useRoastForPropUpDown(c6_idx, contrasts[, c("K97_mutOld_mutYoung")])
+# fry_results_top$c6$K97_wtOld_wtYoung %<>% useRoastForPropUpDown(c6_idx, contrasts[, c("K97_wtOld_wtYoung")])
+# 
+# fry_results_top$c7$K97_mutYoung_wtYoung %<>% useRoastForPropUpDown(c7_idx, contrasts[, c("K97_mutYoung_wtYoung")])
+# fry_results_top$c7$K97_mutOld_wtOld %<>% useRoastForPropUpDown(c7_idx, contrasts[, c("K97_mutOld_wtOld")])
+# fry_results_top$c7$K97_mutOld_mutYoung %<>% useRoastForPropUpDown(c7_idx, contrasts[, c("K97_mutOld_mutYoung")])
+# fry_results_top$c7$K97_wtOld_wtYoung %<>% useRoastForPropUpDown(c7_idx, contrasts[, c("K97_wtOld_wtYoung")])
+# 
+# fry_results_top$go$K97_mutYoung_wtYoung %<>% useRoastForPropUpDown(GO_idx, contrasts[, c("K97_mutYoung_wtYoung")])
+# fry_results_top$go$K97_mutOld_wtOld %<>% useRoastForPropUpDown(GO_idx, contrasts[, c("K97_mutOld_wtOld")])
+# fry_results_top$go$K97_mutOld_mutYoung %<>% useRoastForPropUpDown(GO_idx, contrasts[, c("K97_mutOld_mutYoung")])
+# fry_results_top$go$K97_wtOld_wtYoung %<>% useRoastForPropUpDown(GO_idx, contrasts[, c("K97_wtOld_wtYoung")])
+
+
+
+```
+
+## Heatmap Summary
+
+To summarise the biological changes across all four comparisons, we use the 'Hallmark' gene sets. The code to produce the summary heatmap shown in **Figure 3** is shown below. 
+
+```{r Geneset-Testing-Heatmap-Summary, eval=FALSE}
+
+calcDiff <- function(x) {
+  x %>% mutate(diff = PropUp-PropDown, 
+               geneset = gsub(x = geneset, pattern = "HALLMARK_", replacement = ""))
+}
+
+# Add a new column called scaledDiff to each data.frame in the fryr$h list of data.frames. 
+# Then drop all columns from each data.frame except for the geneset name and scaledDiff.
+fry_summary <- lapply(fry_results_top$h, calcDiff) %>%
+  lapply(., function(x) { x %>% dplyr::select(geneset, diff) })
+
+
+fry_summary_for_heatmap <- full_join(fry_summary$K97_mutYoung_wtYoung, fry_summary$K97_mutOld_wtOld, by = "geneset", suffix = c("mutYoung_wtYoung", "mutOld_wtOld")) %>%
+  full_join(fry_summary$K97_mutOld_mutYoung, by = "geneset") %>%
+  full_join(fry_summary$K97_wtOld_wtYoung, by = "geneset") %>%
+  set_colnames(c("geneset", "mutYoungwtYoung_diff", 
+                 "mutOldwtOld_diff", 
+                 "mutOldmutYoung_diff", 
+                 "wtOldwtYoung_diff")) %>%
+  column_to_rownames("geneset") %>% 
+  as.matrix %>% t
+
+# Replace NAs with 0 for plotting heatmap. 
+fry_summary_for_heatmap[is.na(fry_summary_for_heatmap)] <- 0
+
+fry_summary_for_heatmap %>% pheatmap(
+  border_color = "white", 
+  treeheight_row = 0,
+  fontsize = 6, 
+  cellheight = 12, cellwidth = 12,
+  legend_breaks = c(-0.2, -0.1, 0, 0.1, 0.2),
+  color = colorRampPalette(c("#10c1e5", "#82e0b4","#F9F9F9", "#FBB829", "#FF0066"))(100))
+
+```
+
+
+## Session Info
+```{r Geneset-Testing-Session-Info}
+sessionInfo()
+```
+
+
+

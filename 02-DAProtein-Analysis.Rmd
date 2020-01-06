@@ -1,0 +1,752 @@
+# Differential protein abundance analysis {#DAProteins}
+
+```{r Setup-For-DA-Protein-Analysis, include=FALSE}
+## Manipulating data
+library(plyr)
+library(dplyr)
+library(readr)
+library(tibble)
+library(magrittr)
+library(reshape2)
+
+## Protein analysis
+library(limma)
+library(edgeR)
+library(biomaRt)
+library(UniProt.ws)
+  #up <- UniProt.ws(taxId = 7955)  # zebrafish
+
+library(genefilter)
+library(MSstats)
+library(qvalue)
+
+## Visualisation and plots
+library(ggplot2)
+  theme_set(theme_bw())
+library(corrplot)
+library(RColorBrewer)
+library(grid)
+
+library(knitr)
+library(kableExtra)
+library(pheatmap)
+```
+
+```{r Config-For-DA-Protein-Analysis, echo=FALSE, message=FALSE}
+# Data Directory
+dataDir <- file.path(getwd(), "data")
+
+# ggplot2 theme
+theme_set(theme_bw())
+
+# Viewpoints for grid
+vp_left <- viewport(x = 0, y = 0, width = 0.5, height = 1, just = c(0, 0))
+vp_right <- viewport(x = 0.5, y = 0, width = 0.5, height = 1, just = c(0,0))
+
+# Database objects
+mart <- readRDS(file.path(dataDir, "db", "mart.rds")) # Zebrafish BioMart object
+up <- readRDS(file.path(dataDir, "db", "up.rds")) # Zebrafish UniProt.ws object
+huMart <- readRDS(file.path(dataDir, "db", "huMart.rds")) # Human BioMart object
+
+
+# Function to save a pheatmap 
+save_pheatmap_pdf <- function(x, filename, width=8, height=11) {
+   stopifnot(!missing(x))
+   stopifnot(!missing(filename))
+   pdf(filename, width=width, height=height)
+   grid::grid.newpage()
+   grid::grid.draw(x$gtable)
+   dev.off()
+}
+
+# Function to get results from limma
+getDAProteins <- function(coef, fit, adjust.method = "fdr", p = 0.05, lfc = 0, genelist = dge_biorep$genes) {
+  if(!(coef %in% colnames(fit))) {
+    stop("error: coefficient is not in the fit object")
+  }
+  
+  results <- list()
+  
+  results[["da"]] <- topTable(fit = fit, coef = coef, adjust.method = adjust.method, number = Inf, p.value = p, genelist = dge_biorep$genes, lfc = lfc) %>%
+    rownames_to_column("UniqueIdentifier") %>%
+    as_tibble() %>%
+    mutate(firstProtein = gsub(x = `PROTEIN.NAMES`, pattern = " \\(.*$", replacement=""))
+  
+  results[["all"]] <- topTable(fit = fit, coef = coef, adjust.method = adjust.method, number = Inf, sort.by = "p", genelist = dge_biorep$genes, lfc = 0) %>%
+    rownames_to_column("UniqueIdentifier") %>%
+    as_tibble() %>%
+    mutate(qvalue = (qvalue(p = P.Value, fdr.level = p) %>% use_series("qvalues")),
+           firstProtein = gsub(x = `PROTEIN.NAMES`, pattern = " \\(.*$", replacement=""))
+  
+  
+  return(results)
+}
+
+```
+
+## Data Description
+
+The proteins in the brains of age and *psen1* genotype matched siblings of the samples from the K97Gfs dataset were quantified. Quantification was done using label-free liquid chromatography-tandem mass spectroscopy (LC-MS/MS) by the Adelaide Proteomics Center, and spectra were matched to peptides and potential proteins using the *MaxQuant* software. The *MaxQuant* output files includes the intensities measured for each peptide per sample. The peptides can then be summarised at the protein-level to identify proteins that are present in each sample. 
+
+For sample characteristics, see Table \@ref(tab:Proteomic-Sample-Characteristics)
+
+```{r Proteomic-Sample-Characteristics, message=FALSE, echo=FALSE}
+# Import sample annotations and characteristics for the 6 and 24 month samples. 
+# This is just a spreadsheet with columns corresponding to sample metadata 
+# and rows corresponding to samples. 
+annot <- read_csv(file.path(dataDir, "da_proteins/annot_6_24_combined.csv")) %>%
+  mutate_if(is.character, factor) %>%
+  mutate(Group = as.factor(paste0(Condition, "_", Age))) %>%
+  arrange(Age, desc(Condition))
+
+annot %>%
+  rownames_to_column("Sample") %>%
+  dplyr::select(Raw.file, BioReplicate, TechReplicate, Age, Group) %>%
+  kable(format = "html", caption = "LC-MS/MS Sample Characteristics. For the 'Group', NM refers to non-mutant (wild type) while K97 refers to mutant (heterozygous K97fs mutation).") %>%
+  kable_styling("condensed", font_size = 12) %>%
+  scroll_box(width = "770px")
+```
+
+
+## Data Pre-Processing
+
+### Protein Abundance Estimation
+
+The raw *MaxQuant* output files were supplied by the Adelaide Proteomics Center, and the *MSStats* R package was used to perform peptide-to-protein summmarisation and abundance estimation, which implements a model-based approach for protein quantification and imputation ([Choi et al. 2014](http://doi.org/10.1093/bioinformatics/btu305); [Karpievitch et al. 2009](http://doi.org/10.1093/bioinformatics/btp362)). 
+The steps in this workflow are summarised below. 
+
+1. __Data Import__: *MaxQuant* files containing peptide intensities and peptide-to-potential-protein mappings are imported into R, and a log2 transformation is applied to allow the peptide intensities for each sample to approximate a normal distribution. 
+2. __Feature Selection__: A subset of peptides that were determmined to be the most representative of the possible proteins that could be constructed, were selected in terms of their coverage across the samples. Proteins with too many missing (not detectable) peptides across all samples were removed before normalisation. 
+3. __Normalisation and Imputation of Missing Values__: Peptide intensities were quantile normalised across all 6 month samples, and separately, across all 24 month samples. An accelerated failure time (AFT) model was applied to impute censored missing peptides whose values were assumed to be below the detection limit of the mass spectrometer ([Tekwe et al. 2012](http://doi.org/10.1093/bioinformatics/bts306); [Wang et al. 2012](http://doi.org/10.1093/bioinformatics/bts193)). This is a reasonable assumption, because previous analysis of the proteomic data revealed that most proteins that were only detected in a few samples tended to have much lower intensities, and hence may not have been reliably detected in other samples. 
+4. __Summarisation of Protein Intensities__: Peptides are summarised to proteins by applying a Tukey's median polish (TMP) method, which allows for robust estimation of model parameters. 
+
+The code used to perform these pre-processing steps with *MSstats* is shown below. Because this step takes a while to run, I have saved the final `processed_quant_6` (6 month old data) and `processed_quant_24` (24 month old data) as R objects (.rds files) to be loaded in. 
+
+```{r Use-MSstats-to-process-MaxQuant-Data, message=FALSE, eval=FALSE}
+# The 6 and 24 month samples were done as different experiments, so their data will be analysed separately. 
+
+# Import relevant MaxQuant files for 6 month samples, along with an annotation table describing the samples,
+# and convert the data into a format compatible with MSstats. 
+proteinGroups_6 <- read.table(file.path(dataDir, "da_proteins/raw_peptides_6/proteinGroups.txt"), sep="\t", header=TRUE)
+infile_6 <- read.table(file.path(dataDir, "da_proteins/raw_peptides_6/evidence.txt"), sep="\t", header=TRUE)
+annot_6 <- read_csv(file.path(dataDir, "da_proteins/raw_peptides_6/annot.csv"))
+quant_6 <- MaxQtoMSstatsFormat(evidence = infile_6, proteinGroups = proteinGroups_6, annotation = annot_6)
+
+# Do the same for the 24 month data. 
+proteinGroups_24 <- read.table(file.path(dataDir, "da_proteins/raw_peptides_24/proteinGroups.txt"), sep="\t", header=TRUE)
+infile_24 <- read.table(file.path(dataDir, "da_proteins/raw_peptides_24/evidence.txt"), sep="\t", header=TRUE)
+annot_24 <- read_csv(file.path(dataDir, "da_proteins/raw_peptides_24/annot.csv"))
+quant_24 <- MaxQtoMSstatsFormat(evidence = infile_24, proteinGroups = proteinGroups_24, annotation = annot_24)
+
+# Use the dataProcess function from MaxQuant to perform the pre-processing steps for the 6 month samples.
+processed_quant_6 <- dataProcess(
+  quant_6, 
+  normalization = "quantile", 
+  summaryMethod = "TMP", # Tukey's median polish model performs protein-level summarisation based on median across rows and samples.
+  cutoffCensored = "minFeature", 
+  censoredInt = "NA", # All intensities with NA values should be considered as missing. 
+  MBimpute = TRUE # Use Accelerated Failure Time omdel to impute missing intensities.   
+  )
+
+# Do the same with the 24 month data. 
+processed_quant_24 <- dataProcess(
+  quant_24, 
+  normalization = "quantile", 
+  summaryMethod = "TMP", 
+  cutoffCensored = "minFeature", 
+  censoredInt = "NA", 
+  MBimpute = TRUE
+  )
+
+# saveRDS(processed_quant_6, "da_proteins/processed_quant_6.rds")
+# saveRDS(processed_quant_24, "da_proteins/processed_quant_24.rds")
+```
+
+The processed data are in the `processed_quant_6` and `processed_quant_24` objects for the 6 and 24 month datasets respectively. 
+The processed peptide-level data are in the `$ProcessedData` slot while the processed protein-level data are in the `$RunLevelData` slot. 
+We will extract the protein-level intensities out for the technical replicate and biological replicates. 
+
+```{r Import-Processed-Proteomic-Data, message=FALSE, warning=FALSE}
+# Import sample annotations and characteristics for the 6 and 24 month samples. 
+# This is just a spreadsheet with columns corresponding to sample metadata 
+# and rows corresponding to sammples. 
+annot <- read_csv(file.path(dataDir, "da_proteins/annot_6_24_combined.csv")) %>%
+  mutate_if(is.character, factor) %>%
+  mutate(Group = as.factor(paste0(Condition, "_", Age))) %>%
+  arrange(Age, desc(Condition))
+
+# Read in the result of MSstats dataProcess for the 6 and 24 month samples. 
+# The ProcessedData slot includes peptide-level info while the RunLevelData slot
+# includes "run" or protein-level info.
+processed_quant_6 <- readRDS(file.path(dataDir, "da_proteins/processed_quant_6.rds"))
+processed_quant_24 <- readRDS(file.path(dataDir, "da_proteins/processed_quant_24.rds"))
+
+# Add sample annotation to the processed protein quantification data.
+processed_quant_6$RunlevelData %<>% left_join(annot, by = c("originalRUN"="Raw.file"))
+processed_quant_24$RunlevelData %<>% left_join(annot, by = c("originalRUN"="Raw.file"))
+
+```
+
+
+The distributions of peptides for each sample are shown in the following boxplots. It is evident that the quantiles of each sample are the same in all of the 6 month samples, and separately, in the 24 month samples. However, the 24 month samples seem to have overall lower intensities compared to the 6 month samples. This suggests that if we want to combine the two datasets to do a combined analysis (e.g. so that we can perform the comparison to find differentially abundant proteins between young mutants and wildtypes), we will have to correct for this systematic bias and normalise the intensities. Otherwise most proteins would be considered "differentially abundant" if we were comparing any 6 month samples to 24 month samples. 
+
+```{r Peptide-Distribution-Boxplots, message=FALSE, warning=FALSE, echo=FALSE, fig.cap="Boxplots showing the peptide intensity distributions for each sample (technical replicate) in the K97Gfs dataset.", out.width="770px", height="385px"}
+full_join(processed_quant_6$ProcessedData, processed_quant_24$ProcessedData) %>% 
+  left_join(annot, by = c("originalRUN"="Raw.file")) %>% 
+  ggplot(aes(x = as.factor(as.character(NameTechRep)), y = ABUNDANCE, fill = Group)) + 
+  geom_boxplot(outlier.colour = "#888888", outlier.size = 0.25, 
+               notch = TRUE, outlier.fill=NULL, outlier.shape=19,
+               show.legend = FALSE) + 
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), aspect.ratio = 2) +
+  facet_wrap(~Age + Condition, scales = "free_x", ncol=4) +
+  labs(x = "Sample", y = "log2 Protein Intensity")
+```
+
+The peptides can be reconstructed and summarised at the protein-level as well for each sample. When we do this, the protein intensity distributions vary slightly more between samples, and the quantiles are no longer as equal, as shown in the boxplots below. 
+
+```{r Protein-Distribution-Boxplots, message=FALSE, warning=FALSE, echo=FALSE, fig.cap="Boxplots showing the protein intensity distributions for each sample (technical replicate) in the K97Gfs dataset.", out.width="770px", height="355px"}
+proteinLevelBoxplot_6mth <- processed_quant_6$RunlevelData %>% 
+  ggplot(aes(x = NameTechRep, y = LogIntensities, fill = Group)) + 
+  geom_boxplot(outlier.colour = "#888888", outlier.size = 0.25, 
+               notch = TRUE, outlier.fill=NULL, outlier.shape=19,
+               show.legend = FALSE) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), aspect.ratio = 2) +
+  labs(x = "Sample", y = "log2 Protein Intensity") +
+  ylim(12,27) +
+  facet_wrap(~Condition, ncol=2, scales="free_x") +
+  ggtitle("6 Months")
+
+proteinLevelBoxplot_24mth <- processed_quant_24$RunlevelData %>% 
+  ggplot(aes(x = NameTechRep, y = LogIntensities, fill = Group)) + 
+  geom_boxplot(outlier.colour = "#888888", outlier.size = 0.25, 
+               notch = TRUE, outlier.fill=NULL, outlier.shape=19,
+               show.legend = FALSE) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), aspect.ratio = 2) +
+  labs(x = "Sample", y = " ") +
+  ylim(12,27) +
+  facet_wrap(~Condition, ncol=2, scales="free_x") +
+  ggtitle("24 Months")
+
+
+grid.newpage()
+#vp1_1 <- viewport(x = 0, y = 0, width = 0.5, height = 1, just = c(0, 0))
+#vp1_2 <- viewport(x = 0.5, y = 0, width = 0.5, height = 1, just = c(0,0))
+print(proteinLevelBoxplot_6mth, vp = vp_left)
+print(proteinLevelBoxplot_24mth, vp  = vp_right)
+```
+
+
+### Normalisation of 6 month and 24 month datasets
+
+Because of the systematic bias towards lower protein intensities in the 24 month samples, differential abundance analysis is likely to be inaccurate unless an additional normalisation step is performed to make the 6 and 24 month datasets more comparable. 
+
+Here, we will apply quantile normalisation to equalise the quantiles of the 6 and 24 month datasets. 
+
+```{r Combine-6-and-24-month-datasets, message=FALSE, warning=FALSE}
+# Extract the biological replicate processed protein intensities and join the two datasets.
+# We will also extract the protein db, UniqueIdentifier and EntryName from the Fasta header
+# in the Protein column. 
+biorepquant_6 <- processed_quant_6$RunlevelData %>% 
+  dcast(Protein ~ NameBioRep, value.var = "LogIntensities", fun.aggregate = median) %>% 
+  mutate(
+    Protein = gsub(x = Protein, pattern = ";.*$|.*__", replacement = ""),
+    db = gsub(x= Protein, pattern = "^([[:alpha:]]{2}).*$", replacement = "\\1"),
+    UniqueIdentifier = gsub(x = Protein, pattern = "^[[:alpha:]]{2}\\|([[:alnum:]]*)\\|.*$", replacement = "\\1"),
+    EntryName = gsub(x = Protein, pattern = ".*\\|", replacement = "")) #534 rows 
+biorepquant_24 <- processed_quant_24$RunlevelData %>% 
+  dcast(Protein ~ NameBioRep, value.var = "LogIntensities", fun.aggregate = median) %>% 
+  mutate(
+    Protein = gsub(x = Protein, pattern = ";.*$|.*__", replacement = ""),
+    db = gsub(x= Protein, pattern = "^([[:alpha:]]{2}).*$", replacement = "\\1"),
+    UniqueIdentifier = gsub(x = Protein, pattern = "^[[:alpha:]]{2}\\|([[:alnum:]]*)\\|.*$", replacement = "\\1"),
+    EntryName = gsub(x = Protein, pattern = ".*\\|", replacement = "")) #582 rows
+
+# Convert the column containing protein IDs to character rather than factor. 
+biorepquant_6$Protein %<>% as.character
+biorepquant_24$Protein %<>% as.character
+
+# Do a full join to retain all proteins from the 6 month and 24 month datasets. 
+biorepquant <- full_join(biorepquant_6, biorepquant_24, by = c("UniqueIdentifier", "db", "EntryName", "Protein")) # 688 proteins
+
+# Normalise the datasets with an additional quantile normalisation due 
+# to systematic bias in that the 24 month samples have lower overall protein
+# intensities since  6 and 24 month datasets are from separate batches (experiments). 
+biorepquant_norm <- biorepquant %>%
+  dplyr::select(contains("mth")) %>%
+  as.matrix %>%
+  limma::normalizeQuantiles() %>% # Apply quantile normalization fromm the limma package. 
+  set_rownames(biorepquant$UniqueIdentifier) 
+
+# Filter the resulting 688 proteins down to 323 proteins by retaining only
+# proteins with no NAs across all biological samples. 
+biorepquant_norm_filtered <- biorepquant_norm %>%
+  as.data.frame %>%
+  rownames_to_column("UniqueIdentifier") %>%
+  filter(complete.cases(.)) %>%  #Retain only proteins that have no NAs across all samples. 
+  column_to_rownames("UniqueIdentifier") %>%
+  as.matrix 
+
+biorepquant <- biorepquant_norm_filtered
+```
+
+After the additional quantile normalisation step, followed by filtering the proteins to retain those which show expression across all samples, we would expect that the quantiles of the protein intensity distributions of the 6 and 24 month samples would align more. This is shown in the following boxplots, which indicate the the quantiles of 6 and 24 month samples are very similar and the systematic bias is no longer present.
+
+```{r Biorep-protein-distributions, message=FALSE, warning=FALSE, echo=FALSE, fig.cap="Boxplots of the quantile normalised protein intensity distributions for each biological sample in the combined 6 and 24 month dataset."}
+biorepquant %>% as.data.frame %>% 
+  rownames_to_column("Protein") %>% 
+  dplyr::select(Protein, contains("6mth"), contains("24mth"))  %>% 
+  melt() %>% 
+  left_join(annot[annot$TechReplicate==1, ], by = c("variable"="NameBioRep")) %>% 
+  mutate(variable = as.factor(variable)) %>% 
+  ggplot(aes(x=factor(as.character(variable), levels=unique(variable)), y=value, fill = as.factor(BioReplicate))) + 
+  geom_boxplot(outlier.colour = "#888888", outlier.size = 0.25, 
+               notch = TRUE, outlier.fill=NULL, outlier.shape=19,
+               show.legend = FALSE) +
+  labs(x= "Sample", y = "log2 Intensity", fill="Condition") +
+  theme(aspect.ratio = 2, text = element_text(size=6),
+        axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.title.x = element_blank())+
+  ggtitle("After quantile normalisation - biological samples") +
+  ylim(10,25) +
+  facet_wrap(~Age + Condition, scales="free_x", ncol = 4) 
+```
+
+### Protein Annotation
+
+Proteins detected in the combined 6 and 24 month sammples can be annotated with their protein names, gene names and gene ontology terms from the *UniProt* database, using the UniProtKB `UniqueIdentifier` extracted above. We will also obtain the corresponding Ensembl and entrezgene identifiers for each protein to facilitate comparison with our RNA-seq dataset later on. 
+
+```{r Retrieve-info-from-UniProt, eval=FALSE}
+# Use the UNIPROTKB UniqueIdentifier to retrieve information from the zebrafish UniProt database. 
+uniprotInfo <- select(up, columns = c("UNIPROTKB", "PROTEIN-NAMES", "ENSEMBL", "ENTREZ_GENE", "GENES", "GO"), 
+                         keys = rownames(biorepquant), keytype = "UNIPROTKB")
+
+# Join protein annotations onto the original biorepquant object. 
+biorepquant %<>% as.data.frame %>% rownames_to_column("UniqueIdentifier") %>%
+  left_join(uniprotInfo, by = c("UniqueIdentifier"="UNIPROTKB")) %>%
+  as.data.frame %>%
+  distinct(UniqueIdentifier, .keep_all=TRUE) %>% 
+  column_to_rownames("UniqueIdentifier") 
+
+# saveRDS(biorepquant, "da_proteins/biorepquant_withInfo.rds")
+```
+```{r Read-UniProt-info, echo=FALSE}
+biorepquant <- readRDS(file.path(dataDir, "da_proteins/biorepquant_withInfo.rds"))
+```
+
+## Exploratory Data Analysis
+
+### Correlation between 6 and 24 month samples
+
+The Pearson correlation between the samples is one method of assessing how similar they are to each other. We would expect that samples that have the same age and *psen1* genotype would tend to have higher Pearson correlation coefficients. The correlation matrix between 6 and 24 month old samples is shown below. 
+
+```{r Correlation-biological-samples, echo=FALSE, fig.cap="Pearson correlation matrix of the 6 and 24 month samples from the K97fs dataset.", fig.height=7}
+biorepquant %>% as.data.frame %>%
+  dplyr::select(contains("6mth"), contains("24mth")) %>% 
+  as.matrix %>% 
+  cor %>% 
+  corrplot(method="number", 
+           type="upper", 
+           diag=FALSE, 
+           hclust="complete", 
+           tl.cex=0.5, 
+           tl.col = "black", 
+           col = colorRampPalette(c("#10c1e5", "#82e0b4","#F9F9F9", "#FBB829", "#FF0066"))(100),
+           number.cex=0.5)
+```
+
+Overall, the protein intensities in the 6 month samples tend to be strongly correlated with each other (~0.8-9). However, these intensities are less strongly correlated between 6 and 24 month samples (~0.6). The effect of *psen1* mutation is likely quite small compared to the effect of aging from 6 to 24 months, and it isn't easy to see if samples group by *psen1* mutation from the correlation plot above. 
+
+### Principal Component Analysis 
+
+Principal component analysis is another method to check sample grouping and similarity, and it may be beneficial for visualising the impact of *psen1* mutation on the similarity of samples. 
+The Principal Component Analysis plot of the combined 6 and 24 month samples from the K97fs dataset is shown below. The samples separate by age across the first principal commponent, indicating that age likely represents the largest source of variation in the samples. There is some slight separation of samples across the second principal component corresponding to *psen1* genotype, indicating that this may represent at least partly the second largest source of variation in the samples. 
+
+```{r PCA-biological-samples, message=FALSE, warning=FALSE, echo=FALSE, fig.cap="Principal component analysis plot of the first two principal components in the combined 6 month and 24 month K97fs dataset."}
+# We leave the prcomp() settings as default. Scaling is not needed because the protein intensities are measured on the
+# same scale, and have different variances. We don't need to scale them all to have the same variance.
+pca_analysis <- biorepquant %>% dplyr::select(contains("6mth"), contains("24mth")) %>% as.matrix %>% t %>% prcomp()
+
+# Get a summary of the PCA Analysis results. 
+#summary(pca_analysis)
+
+# Show the first principal components on a plot. 
+ggbiplot::ggbiplot(pca_analysis, obs.scale = 1, var.scale = 1, labels.size = 1, var.axes = FALSE, varname.size=1,
+              groups = annot[annot$TechReplicate==1, ]$Group, ellipse = TRUE, circle = TRUE) +
+  scale_color_discrete(name = '') +
+  theme(legend.direction = 'horizontal', legend.position = 'top', aspect.ratio = 1)
+```
+
+
+
+
+## Differential protein abundance analysis
+
+Differential protein abundance analysis will be done using *limma*, which uses a moderated *t*-test and empirical Bayes approach to analyse microarray and RNA-seq datasets and detect potential differential expression between samples. However, it has been shown that the methods used by *limma* are also applicable to proteomics datasets, and provide greater power to detect changes in protein abundance when compared to a normal *t*-test ([Kammers et al. 2015](https://doi.org/10.1016/j.euprot.2015.02.002); [Schwämmle et al. 2013](http://doi.org/10.1021/pr400045u)). 
+
+In addition, [several](https://support.bioconductor.org/p/64484/) [Biostars](https://support.bioconductor.org/p/69718/) [posts](https://support.bioconductor.org/p/57004/) provide tips for using *limma* to analyse proteomics data. 
+
+```{r Create-DGEList-for-proteomic-data, message=FALSE, warning=FALSE}
+dge_biorep <- biorepquant %>% 
+  as.data.frame %>%
+  dplyr::select(contains("6mth"), contains("24mth"))  %>% 
+  as.matrix %>% 
+  edgeR::DGEList() %>%
+  edgeR::calcNormFactors(method = "none")  
+
+# Add sample data to DGEList object. 
+dge_biorep$samples %<>%
+  rownames_to_column("sample") %>%
+  left_join(annot[annot$TechReplicate==1, ], by=c("sample"="NameBioRep")) %>% 
+  as.data.frame() %>%
+  column_to_rownames("sample")
+
+# Add protein info to DGEList object. 
+dge_biorep$genes <- biorepquant %>%
+  as.data.frame %>%
+  rownames_to_column("UniqueIdentifier") %>%
+  dplyr::select(UniqueIdentifier, `PROTEIN-NAMES`, ENSEMBL, ENTREZ_GENE, GENES, GO) %>%
+  column_to_rownames("UniqueIdentifier") %>%
+  extract(rownames(dge_biorep$counts),)
+```
+
+
+Several aspects of the *limma* analysis include:
+
+- The protein intensities have been previously log2 transformed and quantile normalised. No additional normalisation has been performed since then. 
+- Sample-level weights are estimated using *limma*'s `arrayWeights` function and the design matrix. This estimates a scaling factor for each sample that represents the weighting, or importance that each sample is given in the rest of the analysis. Highly variable samples tend to be downweighted as they are considered potentially more like outliers.
+- The linear model is fit to each protein to determine whether it might show differential abundance while accounting for the sample-level weights. 
+
+
+```{r Use-limma-to-detect-DA-proteins, message=FALSE, warning=FALSE}
+# Create design matrix using Group as the explanatory variable.
+# Levels of Group are K97_24, K97_6, NM_24, NM_6
+design_biorep <- model.matrix(~0 + Group, data = dge_biorep$samples) %>%
+  set_colnames(gsub(x=colnames(.), pattern = "Group", replacement = ""))
+
+# Define contrasts / comparisons between groups. 
+contrasts_biorep <- makeContrasts(
+  levels = colnames(design_biorep),
+  K97_mutYoung_wtYoung = K97_6-NM_6,
+  K97_mutOld_wtOld = K97_24-NM_24,
+  K97_wtOld_wtYoung = NM_24-NM_6,
+  K97_mutOld_mutYoung = K97_24-K97_6
+)
+
+# Estimate sample-level weights using the groups defined in design matrix.
+weights_biorep <- arrayWeights(dge_biorep$counts, design_biorep) %>% set_names(colnames(dge_biorep$counts))
+
+# Fit the generalized linear model
+fit_biorep <- lmFit(dge_biorep$counts, design_biorep, weights = weights_biorep) %>%
+  contrasts.fit(contrasts_biorep) %>%
+  eBayes(robust = TRUE, trend = TRUE)
+#plotSA(fit_biorep)
+
+# Get summary of up and down regulated proteins for each comparison
+results_biorep <- decideTests(fit_biorep, p.value=0.05, lfc = 0, adjust.method="fdr", method = "global") 
+summary(results_biorep)
+
+
+# Export results using limma's write.fit function. 
+# write.fit(fit_biorep, results = results_biorep, file = file.path(dataDir, "da_proteins/da_protein_results.txt"), digits = 9, adjust = "fdr", method = "global", sep = "\t")
+
+
+protein_results <- read_tsv(file.path(dataDir, "da_proteins/da_protein_results.txt")) %>%
+  bind_cols(dge_biorep$genes%>%rownames_to_column("ensembl_gene_id"))
+
+DA_proteins <- list()
+DA_proteins[["K97_mutYoung_wtYoung"]] <- protein_results %>% 
+  filter(Res.K97_mutYoung_wtYoung != 0) %>% 
+  dplyr::arrange(p.value.adj.K97_mutYoung_wtYoung) %>%
+  mutate(firstProtein = gsub(x = `PROTEIN-NAMES`, pattern = " \\(.*$", replacement = ""),
+         firstGene = gsub(x = GENES, pattern = " .*$", replacement = ""),
+         firstProteinAndGene = paste0(firstProtein, " (", firstGene, ")")) 
+
+DA_proteins[["K97_mutOld_wtOld"]] <- protein_results %>% 
+  filter(Res.K97_mutOld_wtOld != 0) %>% 
+  dplyr::arrange(p.value.adj.K97_mutOld_wtOld) %>%
+  mutate(firstProtein = gsub(x = `PROTEIN-NAMES`, pattern = " \\(.*$", replacement = ""),
+         firstGene = gsub(x = GENES, pattern = " .*$", replacement = ""),
+         firstProteinAndGene = paste0(firstProtein, " (", firstGene, ")")) 
+
+DA_proteins[["K97_mutOld_mutYoung"]] <- protein_results %>% 
+  filter(Res.K97_mutOld_mutYoung != 0) %>% 
+  dplyr::arrange(p.value.adj.K97_mutOld_mutYoung) %>%
+  mutate(firstProtein = gsub(x = `PROTEIN-NAMES`, pattern = " \\(.*$", replacement = ""),
+         firstGene = gsub(x = GENES, pattern = " .*$", replacement = ""),
+         firstProteinAndGene = paste0(firstProtein, " (", firstGene, ")")) 
+
+DA_proteins[["K97_wtOld_wtYoung"]] <- protein_results %>% 
+  filter(Res.K97_wtOld_wtYoung != 0) %>% 
+  dplyr::arrange(p.value.adj.K97_wtOld_wtYoung) %>%
+  mutate(firstProtein = gsub(x = `PROTEIN-NAMES`, pattern = " \\(.*$", replacement = ""),
+         firstGene = gsub(x = GENES, pattern = " .*$", replacement = ""),
+         firstProteinAndGene = paste0(firstProtein, " (", firstGene, ")")) 
+
+
+
+
+# Export results of limma analysis using a  custom topTable function
+proteinList_biorep <- list()
+proteinList_biorep[["K97_mutOld_wtOld"]] <- getDAProteins("K97_mutOld_wtOld", fit_biorep)
+proteinList_biorep[["K97_mutYoung_wtYoung"]] <- getDAProteins("K97_mutYoung_wtYoung", fit_biorep)
+proteinList_biorep[["K97_wtOld_wtYoung"]] <- getDAProteins("K97_wtOld_wtYoung", fit_biorep)
+proteinList_biorep[["K97_mutOld_mutYoung"]] <- getDAProteins("K97_mutOld_mutYoung", fit_biorep)
+proteinList_biorep[["AllComparisons"]] <- topTable(fit_biorep, n = Inf, p.value = 0.05, adjust.method = "fdr", genelist = dge_biorep$genes) %>%
+  rownames_to_column("UniqueIdentifier")
+```
+
+## Results
+
+### Effect of the K97fs Mutation on Protein Abundance
+
+The following two volcano plots show the differentially abundant proteins detected at 6 months and at 24 months, when comparing K97Gfs/+ samples to age-matched +/+ samples. 
+
+```{r Volcano-Plots-Mutant-vs-Wt, message=FALSE, echo=FALSE, warning=FALSE, fig.cap="Volcano plots showing differentially abundant proteins between K97Gfs/+ and +/+ samples at 6 and 24 months. The grey line corresponds to the significance level cutoff (False Discovery Rate adjusted p-value of 0.05) and the turquoise line corresponds to a raw p-value of 0.05."}
+DEColours <- c("orange", "black", "turquoise") %>% as.factor
+
+DEColours <- c("-1" = "turquoise", "1" = "orange", "0" = "black")
+
+volcano_biorep_6 <- proteinList_biorep$K97_mutYoung_wtYoung$all %>%
+  mutate(isDE = adj.P.Val < 0.05) %>% 
+  left_join((results_biorep%>%as.data.frame%>%rownames_to_column("UniqueIdentifier"))) %>%  
+  ggplot(aes(x = logFC, y = -log10(P.Value), colour=as.factor(K97_mutYoung_wtYoung))) +
+  geom_point(size=1, alpha=0.5) +
+  labs(x = "log2 fold change", y = "-log10 p-value")+
+  theme(aspect.ratio = 1, legend.position = "none") +
+  scale_color_manual(values=DEColours) +
+  geom_hline(yintercept=-log10(0.015), colour="black") +
+  geom_hline(yintercept=-log10(0.05), colour="#999999", lty = "dashed") +  
+  ggtitle("Differentially expressed at 6 months")
+
+volcano_biorep_24 <- proteinList_biorep$K97_mutOld_wtOld$all %>%
+  mutate(isDE = adj.P.Val < 0.05) %>% 
+  left_join((results_biorep%>%as.data.frame%>%rownames_to_column("UniqueIdentifier"))) %>%  
+  ggplot(aes(x = logFC, y = -log10(P.Value), colour=as.factor(K97_mutOld_wtOld))) +
+  geom_point(size=1, alpha=0.5) +
+  labs(x = "log2 fold change", y = "-log10 p-value")+
+  theme(aspect.ratio = 1, legend.position = "none") +
+  scale_color_manual(values=DEColours) +
+  geom_hline(yintercept=-log10(0.015), colour="black") +
+  geom_hline(yintercept=-log10(0.05), colour="#999999", lty = "dashed") +  
+  ggtitle("Differentially expressed at 24 months")
+
+
+grid.newpage()
+print(volcano_biorep_6, vp = vp_left)
+print(volcano_biorep_24, vp  = vp_right)
+
+```
+
+#### Effect of K97Gfs/+ on Protein Abundance at 6 Months
+
+There are `r length(proteinList_biorep$K97_mutYoung_wtYoung$da$UniqueIdentifier)` proteins which are differentially abundant between wildtypes and mutants at 6 months: `r (proteinList_biorep$K97_mutYoung_wtYoung$da$firstProtein)` (adjusted p-value < 0.05). Several proteins have adjusted p-values between 0.05 and 0.06. The heatmap below shows the top 10 differentially abundant proteins (ranging from adjusted p value of 0.01 to 0.06).
+
+```{r Heatmap-DA-Proteins-mutYoung-wtYoung, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Differentially Abundant Proteins at 6 months in the K97Gfs dataset. Significance level of 0.05 is used. Numbers in heatmap are normalised log2 protein intensities.", height="700px", fig.height=7}
+# Differentially abundant proteins between 6 month old mutants and wildtypes.
+proteomic_heatmap_6mths <- dge_biorep$counts %>% 
+  extract(DA_proteins$K97_mutYoung_wtYoung$ensembl_gene_id, c(4:6,1:3)) %>%
+  as.matrix %>%
+  pheatmap(
+    scale="row", 
+    cluster_cols = FALSE, 
+    clustering_distance_rows = "euclidean", 
+    border_color = "white", 
+    treeheight_row = 0,
+    fontsize = 7, 
+    cellwidth = 15, cellheight = 15,
+    color = colorRampPalette(c("#10c1e5", "#82e0b4","#F9F9F9", "#FBB829", "#FF0066"))(100),
+    labels_row = DA_proteins$K97_mutYoung_wtYoung$firstProteinAndGene, 
+    number_color = "#666666", fontsize_number = 4.5,
+    gaps_col = c(3))
+#save_pheatmap_pdf(proteomic_heatmap_6mths, "data/Figures/Figure_3_Proteins/SI-ProteinHeatmap.pdf")
+
+
+
+
+```
+```{r Proteins-mutYoung-wtYoung, echo=FALSE, message=FALSE, warning=FALSE}
+DA_proteins$K97_mutYoung_wtYoung %>%
+  dplyr::select(firstProteinAndGene, Coef.K97_mutYoung_wtYoung, p.value.adj.K97_mutYoung_wtYoung) %>%
+  set_colnames(c("Protein Name (Gene Name)","logFC", "FDR adj. p-value")) %>%
+  kable(format = "html", caption = "Differentially abundant proteins for the 6-month-old mutant vs. 6-month-old wild type comparison.") %>%
+  kable_styling("condensed") %>%
+  scroll_box(width = "770px", height = "770px")
+```
+
+#### Effect of K97Gfs/+ on Protein Abundance at 24 Months
+
+There are `r length(proteinList_biorep$K97_mutOld_wtOld$da$UniqueIdentifier)` proteins which are differentially abundant between wildtypes and mutants at 24 months (FDR-adjusted p-value < 0.05). These are shown in the heatmap and table below.
+
+```{r Heatmap-DA-Proteins-mutOld-wtOld, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Differentially Abundant Proteins at 24 months in the K97Gfs dataset. ", height="1000px", fig.height=11}
+proteomic_heatmap_24mths <- dge_biorep$counts %>% 
+  extract(DA_proteins$K97_mutOld_wtOld$ensembl_gene_id, c(11:14,7:10)) %>% 
+  as.matrix %>%
+  pheatmap::pheatmap(scale="row", 
+                     clustering_distance_rows = "euclidean", 
+                     cluster_cols = FALSE,
+                     border_color = "white", 
+                     treeheight_row = 0,
+                     fontsize = 6, 
+                     cellwidth = 11, cellheight = 11,
+                     color = colorRampPalette(c("#10c1e5", "#82e0b4","#F9F9F9", "#FBB829", "#FF0066"))(100),
+                     labels_row = DA_proteins$K97_mutOld_wtOld$firstProteinAndGene,
+                     number_color = "#666666", fontsize_number = 3,
+                     gaps_col = 4)
+                     #display_numbers = signif(as.matrix(.), 3))
+
+
+```
+```{r Proteins-mutOld-wtOld, echo=FALSE, message=FALSE, warning=FALSE}
+DA_proteins$K97_mutOld_wtOld %>%
+  dplyr::select(firstProteinAndGene, Coef.K97_mutOld_wtOld, p.value.adj.K97_mutOld_wtOld) %>%
+  set_colnames(c("Protein Name (Gene Name)","logFC", "FDR adj. p-value")) %>%
+  kable(format = "html", caption = "Differentially abundant proteins for the 24-month-old mutant vs. 24-month-old wild type comparison.") %>%
+  kable_styling("condensed") %>%
+  scroll_box(width = "770px", height = "770px")
+```
+
+## Heatmap Summary
+The following code was used to produce the heatmaps in **Figure 3** showing the logFC of differentially abundant proteins between *psen1*<sup>K97fs/+</sup> and *psen1*<sup>+/+</sup> zebrafish at 6 months and at 24 months of age, along with the logFC of the other comparisons. 
+
+The gene symbols are shown on these heatmaps (instead of the protein names) for display and readability purposes.  
+
+Note that the code to produce the heatmap is not evaluated for this Markdown document as the figure is too wide to fit on the screen. 
+
+```{r DA-Protein-Heatmap-Summary, eval=FALSE}
+
+# View the proteins which are differentially expressed between 6-month-old mutants and wild types. 
+
+heatmap_6mth <- DA_proteins$K97_mutYoung_wtYoung %>%
+  dplyr::select(firstGene, starts_with("Coef")) %>% 
+  as.data.frame %>%
+  arrange(desc(Coef.K97_mutYoung_wtYoung), desc(Coef.K97_wtOld_wtYoung)) %>%
+  column_to_rownames("firstGene") %>%
+  dplyr::select("Coef.K97_mutYoung_wtYoung", "Coef.K97_wtOld_wtYoung", "Coef.K97_mutOld_wtOld", "Coef.K97_mutOld_mutYoung")
+
+# To prevent very large or small logFC from standing out too much in the heatmap,
+# set the maximum and minimum logFC for visualisation purposes.
+heatmap_6mth[(heatmap_6mth)>3] <- 3
+heatmap_6mth[(heatmap_6mth)<(-3)] <- (-3)
+
+# Create the heatmap for DE genes at 6 months
+h6 <- heatmap_6mth%>%
+  t %>%
+  pheatmap(
+    scale="none",
+    cluster_rows = FALSE,
+    clustering_method = "complete",
+    clustering_distance_cols = "binary",
+    border_color = "white", 
+    treeheight_col = 60, 
+    treeheight_row = 0,
+    fontsize = 6, 
+    cellheight = 10, cellwidth = 10,
+        color = colorRampPalette(c("#10c1e5", "#82e0b4","#F9F9F9", "#FBB829", "#FF0066"))(100))
+
+
+# ---------------------------------------------------------------------------------#
+
+# Do the same with the 24 month mutant vs. wild type DA proteins
+
+heatmap_24mth <- DA_proteins$K97_mutOld_wtOld %>%
+  dplyr::select(firstGene, starts_with("Coef")) %>% 
+  as.data.frame %>%
+  arrange(desc(Coef.K97_mutOld_wtOld)) %>%
+  column_to_rownames("firstGene") %>%
+  dplyr::select("Coef.K97_mutOld_wtOld", "Coef.K97_wtOld_wtYoung", "Coef.K97_mutYoung_wtYoung", "Coef.K97_mutOld_mutYoung")
+
+# To prevent very large or small logFC from standing out too much in the heatmap,
+# set the maximum and minimum logFC for visualisation purposes.
+heatmap_24mth[(heatmap_24mth)>3] <- 3
+heatmap_24mth[(heatmap_24mth)<(-3)] <- (-3)
+
+# Create the heatmap for DE genes at 6 months
+h24 <- heatmap_24mth%>%
+  t %>%
+  pheatmap(
+    scale="none",
+    cluster_rows = FALSE,
+    clustering_method = "complete",
+    clustering_distance_cols = "binary",
+    border_color = "white", 
+    treeheight_col = 60, 
+    treeheight_row = 0,
+    fontsize = 6, 
+    cellheight = 10, cellwidth = 10,
+        color = colorRampPalette(c("#10c1e5", "#82e0b4","#F9F9F9", "#FBB829", "#FF0066"))(100))
+
+
+```
+
+
+## Enrichment Analysis 
+
+We will use *limma*'s functions `goana` and `kegga` to perform enrichment analysis using Gene Ontology terms and KEGG pathways respectively. 
+
+```{r Overrepresentation-Analysis-with-Proteomic-Data}
+# Over-representation of Gene Ontology Terms
+# Test for each contrast (comparison).
+
+goana_proteins <- list()
+
+goana_proteins[["mutYoung_wtYoung"]] <- goana(DA_proteins$K97_mutYoung_wtYoung$ENTREZ_GENE,
+                                              universe = proteinList_biorep$K97_mutYoung_wtYoung$all$ENTREZ_GENE,
+                                              species = "Dr") %>% mutate(FDR = p.adjust(P.DE, "fdr"))
+
+
+goana_proteins[["mutOld_wtOld"]] <- goana(DA_proteins$K97_mutOld_wtOld$ENTREZ_GENE,
+                                              universe = proteinList_biorep$K97_mutOld_wtOld$all$ENTREZ_GENE,
+                                              species = "Dr") %>% mutate(FDR = p.adjust(P.DE, "fdr"))
+
+goana_proteins[["wtOld_wtYoung"]] <- goana(DA_proteins$K97_wtOld_wtYoung$ENTREZ_GENE,
+                                              universe = proteinList_biorep$K97_wtOld_wtYoung$all$ENTREZ_GENE,
+                                              species = "Dr") %>% mutate(FDR = p.adjust(P.DE, "fdr"))
+
+goana_proteins[["mutOld_mutYoung"]] <- goana(DA_proteins$K97_mutOld_mutYoung$ENTREZ_GENE,
+                                              universe = proteinList_biorep$K97_mutOld_mutYoung$all$ENTREZ_GENE,
+                                              species = "Dr") %>% mutate(FDR = p.adjust(P.DE, "fdr"))
+
+top_goana_proteins <- lapply(goana_proteins, limma::topGO)
+
+# Preview the top enriched GO terms for the comparisons of mutant vs. wildtype in 
+# young (6 month old) and old (24 month old) zebrafish. 
+top_goana_proteins$mutYoung_wtYoung %>% kable()
+top_goana_proteins$mutOld_wtOld %>% kable()
+
+#-----------------------------------------------------------------------------------------------------------------------#
+# Over-represemtation analysis of KEGG Pathways
+# for each contrast (comparison)
+
+kegga_proteins <- list()
+
+kegga_proteins[["mutYoung_wtYoung"]] <- kegga(DA_proteins$K97_mutYoung_wtYoung$ENTREZ_GENE,
+                                              universe = proteinList_biorep$K97_mutYoung_wtYoung$all$ENTREZ_GENE,
+                                              species = "Dr") %>% mutate(FDR = p.adjust(P.DE, "fdr"))
+
+
+kegga_proteins[["mutOld_wtOld"]] <- kegga(DA_proteins$K97_mutOld_wtOld$ENTREZ_GENE,
+                                              universe = proteinList_biorep$K97_mutOld_wtOld$all$ENTREZ_GENE,
+                                              species = "Dr") %>% mutate(FDR = p.adjust(P.DE, "fdr"))
+
+kegga_proteins[["wtOld_wtYoung"]] <- kegga(DA_proteins$K97_wtOld_wtYoung$ENTREZ_GENE,
+                                              universe = proteinList_biorep$K97_wtOld_wtYoung$all$ENTREZ_GENE,
+                                              species = "Dr") %>% mutate(FDR = p.adjust(P.DE, "fdr"))
+
+kegga_proteins[["mutOld_mutYoung"]] <- kegga(DA_proteins$K97_mutOld_mutYoung$ENTREZ_GENE,
+                                              universe = proteinList_biorep$K97_mutOld_mutYoung$all$ENTREZ_GENE,
+                                              species = "Dr") %>% mutate(FDR = p.adjust(P.DE, "fdr"))
+
+top_kegga_proteins <- lapply(kegga_proteins, topKEGG)
+
+# Preview the top enriched KEGG pathways for the comparisons of mutant vs. wildtype in 
+# young (6 month old) and old (24 month old) zebrafish. 
+top_kegga_proteins$mutYoung_wtYoung %>% kable()
+top_kegga_proteins$mutOld_wtOld %>% kable()
+
+```
+
+
+## Session Info
+```{r}
+sessionInfo()
+```
+
