@@ -1,7 +1,5 @@
-This is a minimal bookdown example. Although you see a few files here, only `index.Rmd` is required. All other files are optional, but `bookdown-minimal.Rproj` can make it much easier to build the book.
+# K97fs Zebrafish Analysis
 
-The key is the `site` setting in `index.Rmd`. If you want to build the book in RStudio, just click the `Build Book` button in the `Build` pane, otherwise call the function in R:
+- Analysis code for the research in the manuscript __Accelerated brain aging towards transcriptional inversion in a zebrafish model of the K115fs mutation of human *PSEN2*__. 
 
-```r
-bookdown::render_book('index.Rmd', 'all')
-```
+- The analysis is divided into 5 `.Rmd` files corresponding to Differential Gene Expression Analysis, Differential Protein Abundance Analysis, Gene Set Testing Analysis, Enrichment Analysis, and Weighted Gene Co-Expression Network Analysis. 
