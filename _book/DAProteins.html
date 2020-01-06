@@ -1,0 +1,2992 @@
+<!DOCTYPE html>
+<html >
+
+<head>
+
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>K97fs Zebrafish Analysis</title>
+  <meta name="description" content="K97fs Zebrafish Analysis">
+  <meta name="generator" content="bookdown 0.5 and GitBook 2.6.7">
+
+  <meta property="og:title" content="K97fs Zebrafish Analysis" />
+  <meta property="og:type" content="book" />
+  
+  
+  
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="K97fs Zebrafish Analysis" />
+  
+  
+  
+
+<meta name="author" content="Nhi Hin">
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  
+  
+<link rel="prev" href="differential-gene-expression-analysis.html">
+
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="1" data-path="differential-gene-expression-analysis.html"><a href="differential-gene-expression-analysis.html"><i class="fa fa-check"></i><b>1</b> Differential Gene Expression Analysis</a><ul>
+<li class="chapter" data-level="1.1" data-path="differential-gene-expression-analysis.html"><a href="differential-gene-expression-analysis.html#data-description"><i class="fa fa-check"></i><b>1.1</b> Data Description</a></li>
+<li class="chapter" data-level="1.2" data-path="differential-gene-expression-analysis.html"><a href="differential-gene-expression-analysis.html#data-pre-processing"><i class="fa fa-check"></i><b>1.2</b> Data Pre-Processing</a></li>
+<li class="chapter" data-level="1.3" data-path="differential-gene-expression-analysis.html"><a href="differential-gene-expression-analysis.html#filtering-low-expression-genes"><i class="fa fa-check"></i><b>1.3</b> Filtering Low Expression Genes</a></li>
+<li class="chapter" data-level="1.4" data-path="differential-gene-expression-analysis.html"><a href="differential-gene-expression-analysis.html#batch-effect-estimation"><i class="fa fa-check"></i><b>1.4</b> Batch Effect Estimation</a></li>
+<li class="chapter" data-level="1.5" data-path="differential-gene-expression-analysis.html"><a href="differential-gene-expression-analysis.html#limma-analysis"><i class="fa fa-check"></i><b>1.5</b> Limma Analysis</a><ul>
+<li class="chapter" data-level="1.5.1" data-path="differential-gene-expression-analysis.html"><a href="differential-gene-expression-analysis.html#including-batch-effect-estimation"><i class="fa fa-check"></i><b>1.5.1</b> Including Batch Effect Estimation</a></li>
+<li class="chapter" data-level="1.5.2" data-path="differential-gene-expression-analysis.html"><a href="differential-gene-expression-analysis.html#not-including-batch-effect-estimation"><i class="fa fa-check"></i><b>1.5.2</b> Not Including Batch Effect Estimation</a></li>
+<li class="chapter" data-level="1.5.3" data-path="differential-gene-expression-analysis.html"><a href="differential-gene-expression-analysis.html#effect-of-accounting-for-batch-effects"><i class="fa fa-check"></i><b>1.5.3</b> Effect of Accounting for Batch Effects</a></li>
+</ul></li>
+<li class="chapter" data-level="1.6" data-path="differential-gene-expression-analysis.html"><a href="differential-gene-expression-analysis.html#results"><i class="fa fa-check"></i><b>1.6</b> Results</a></li>
+<li class="chapter" data-level="1.7" data-path="differential-gene-expression-analysis.html"><a href="differential-gene-expression-analysis.html#heatmap-summary"><i class="fa fa-check"></i><b>1.7</b> Heatmap Summary</a></li>
+<li class="chapter" data-level="1.8" data-path="differential-gene-expression-analysis.html"><a href="differential-gene-expression-analysis.html#session-info"><i class="fa fa-check"></i><b>1.8</b> Session Info</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="DAProteins.html"><a href="DAProteins.html"><i class="fa fa-check"></i><b>2</b> Differential protein abundance analysis</a><ul>
+<li class="chapter" data-level="2.1" data-path="DAProteins.html"><a href="DAProteins.html#data-description-1"><i class="fa fa-check"></i><b>2.1</b> Data Description</a></li>
+<li class="chapter" data-level="2.2" data-path="DAProteins.html"><a href="DAProteins.html#data-pre-processing-1"><i class="fa fa-check"></i><b>2.2</b> Data Pre-Processing</a><ul>
+<li class="chapter" data-level="2.2.1" data-path="DAProteins.html"><a href="DAProteins.html#protein-abundance-estimation"><i class="fa fa-check"></i><b>2.2.1</b> Protein Abundance Estimation</a></li>
+<li class="chapter" data-level="2.2.2" data-path="DAProteins.html"><a href="DAProteins.html#normalisation-of-6-month-and-24-month-datasets"><i class="fa fa-check"></i><b>2.2.2</b> Normalisation of 6 month and 24 month datasets</a></li>
+<li class="chapter" data-level="2.2.3" data-path="DAProteins.html"><a href="DAProteins.html#protein-annotation"><i class="fa fa-check"></i><b>2.2.3</b> Protein Annotation</a></li>
+</ul></li>
+<li class="chapter" data-level="2.3" data-path="DAProteins.html"><a href="DAProteins.html#exploratory-data-analysis"><i class="fa fa-check"></i><b>2.3</b> Exploratory Data Analysis</a><ul>
+<li class="chapter" data-level="2.3.1" data-path="DAProteins.html"><a href="DAProteins.html#correlation-between-6-and-24-month-samples"><i class="fa fa-check"></i><b>2.3.1</b> Correlation between 6 and 24 month samples</a></li>
+<li class="chapter" data-level="2.3.2" data-path="DAProteins.html"><a href="DAProteins.html#principal-component-analysis"><i class="fa fa-check"></i><b>2.3.2</b> Principal Component Analysis</a></li>
+</ul></li>
+<li class="chapter" data-level="2.4" data-path="DAProteins.html"><a href="DAProteins.html#differential-protein-abundance-analysis"><i class="fa fa-check"></i><b>2.4</b> Differential protein abundance analysis</a></li>
+<li class="chapter" data-level="2.5" data-path="DAProteins.html"><a href="DAProteins.html#results-1"><i class="fa fa-check"></i><b>2.5</b> Results</a><ul>
+<li class="chapter" data-level="2.5.1" data-path="DAProteins.html"><a href="DAProteins.html#effect-of-the-k97fs-mutation-on-protein-abundance"><i class="fa fa-check"></i><b>2.5.1</b> Effect of the K97fs Mutation on Protein Abundance</a></li>
+</ul></li>
+<li class="chapter" data-level="2.6" data-path="DAProteins.html"><a href="DAProteins.html#heatmap-summary-1"><i class="fa fa-check"></i><b>2.6</b> Heatmap Summary</a></li>
+<li class="chapter" data-level="2.7" data-path="DAProteins.html"><a href="DAProteins.html#enrichment-analysis"><i class="fa fa-check"></i><b>2.7</b> Enrichment Analysis</a></li>
+<li class="chapter" data-level="2.8" data-path="DAProteins.html"><a href="DAProteins.html#session-info-1"><i class="fa fa-check"></i><b>2.8</b> Session Info</a></li>
+</ul></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">K97fs Zebrafish Analysis</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="DAProteins" class="section level1">
+<h1><span class="header-section-number">2</span> Differential protein abundance analysis</h1>
+<div id="data-description-1" class="section level2">
+<h2><span class="header-section-number">2.1</span> Data Description</h2>
+<p>The proteins in the brains of age and <em>psen1</em> genotype matched siblings of the samples from the K97Gfs dataset were quantified. Quantification was done using label-free liquid chromatography-tandem mass spectroscopy (LC-MS/MS) by the Adelaide Proteomics Center, and spectra were matched to peptides and potential proteins using the <em>MaxQuant</em> software. The <em>MaxQuant</em> output files includes the intensities measured for each peptide per sample. The peptides can then be summarised at the protein-level to identify proteins that are present in each sample.</p>
+<p>For sample characteristics, see Table <a href="DAProteins.html#tab:Proteomic-Sample-Characteristics">2.1</a></p>
+<div style="border: 1px solid #ddd; padding: 5px; overflow-x: scroll; width:770px; ">
+<table class="table table-condensed" style="font-size: 12px; margin-left: auto; margin-right: auto;">
+<caption style="font-size: initial !important;">
+<span id="tab:Proteomic-Sample-Characteristics">Table 2.1: </span>LC-MS/MS Sample Characteristics. For the ‘Group’, NM refers to non-mutant (wild type) while K97 refers to mutant (heterozygous K97fs mutation).
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Raw.file
+</th>
+<th style="text-align:right;">
+BioReplicate
+</th>
+<th style="text-align:right;">
+TechReplicate
+</th>
+<th style="text-align:right;">
+Age
+</th>
+<th style="text-align:left;">
+Group
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+IMP150918_15-038b_2_run1_BC2_01_2951
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+NM_6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP150918_15-038b_2_run2_BC2_01_2952
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+NM_6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP150918_15-038b_4_run1_BC4_01_2957
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+NM_6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP150918_15-038b_4_run2_BC4_01_2958
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+NM_6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP150918_15-038b_6_run1_BC6_01_2963
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+NM_6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP150918_15-038b_6_run2_BC6_01_2964
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+NM_6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP150918_15-038b_1_run1_BC1_01_2948
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+K97_6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP150918_15-038b_1_run2_BC1_01_2949
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+K97_6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP150918_15-038b_3_run1_BC3_01_2954
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+K97_6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP150918_15-038b_3_run2_BC3_01_2955
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+K97_6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP150918_15-038b_5_run1_BC5_01_2960
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+K97_6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP150918_15-038b_5_run2_BC5_01_2961
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+K97_6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_1NM_1_RA1_01_486
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+NM_24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_1NM_2_RA1_01_487
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+NM_24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_2NM_1_RA2_01_489
+</td>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+NM_24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_2NM_2_RA2_01_490
+</td>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+NM_24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_3NM_1_RA3_01_492
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+NM_24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_3NM_2_RA3_01_493
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+NM_24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_4NM_1_RA4_01_495
+</td>
+<td style="text-align:right;">
+14
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+NM_24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_4NM_2_RA4_01_496
+</td>
+<td style="text-align:right;">
+14
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+NM_24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_1K_1_RA5_01_498
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+K97_24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_1K_2_RA5_01_500
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+K97_24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_2K_1_RA6_01_502
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+K97_24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_2K_2_RA6_01_503
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+K97_24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_3K_1_RA7_01_505
+</td>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+K97_24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_3K_2_RA7_01_506
+</td>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+K97_24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_4K_1_RA8_01_508
+</td>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+K97_24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+IMP160413_16-019_4K_2_RA8_01_509
+</td>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:left;">
+K97_24
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="data-pre-processing-1" class="section level2">
+<h2><span class="header-section-number">2.2</span> Data Pre-Processing</h2>
+<div id="protein-abundance-estimation" class="section level3">
+<h3><span class="header-section-number">2.2.1</span> Protein Abundance Estimation</h3>
+<p>The raw <em>MaxQuant</em> output files were supplied by the Adelaide Proteomics Center, and the <em>MSStats</em> R package was used to perform peptide-to-protein summmarisation and abundance estimation, which implements a model-based approach for protein quantification and imputation (<a href="http://doi.org/10.1093/bioinformatics/btu305">Choi et al. 2014</a>; <a href="http://doi.org/10.1093/bioinformatics/btp362">Karpievitch et al. 2009</a>). The steps in this workflow are summarised below.</p>
+<ol style="list-style-type: decimal">
+<li><strong>Data Import</strong>: <em>MaxQuant</em> files containing peptide intensities and peptide-to-potential-protein mappings are imported into R, and a log2 transformation is applied to allow the peptide intensities for each sample to approximate a normal distribution.</li>
+<li><strong>Feature Selection</strong>: A subset of peptides that were determmined to be the most representative of the possible proteins that could be constructed, were selected in terms of their coverage across the samples. Proteins with too many missing (not detectable) peptides across all samples were removed before normalisation.</li>
+<li><strong>Normalisation and Imputation of Missing Values</strong>: Peptide intensities were quantile normalised across all 6 month samples, and separately, across all 24 month samples. An accelerated failure time (AFT) model was applied to impute censored missing peptides whose values were assumed to be below the detection limit of the mass spectrometer (<a href="http://doi.org/10.1093/bioinformatics/bts306">Tekwe et al. 2012</a>; <a href="http://doi.org/10.1093/bioinformatics/bts193">Wang et al. 2012</a>). This is a reasonable assumption, because previous analysis of the proteomic data revealed that most proteins that were only detected in a few samples tended to have much lower intensities, and hence may not have been reliably detected in other samples.</li>
+<li><strong>Summarisation of Protein Intensities</strong>: Peptides are summarised to proteins by applying a Tukey’s median polish (TMP) method, which allows for robust estimation of model parameters.</li>
+</ol>
+<p>The code used to perform these pre-processing steps with <em>MSstats</em> is shown below. Because this step takes a while to run, I have saved the final <code>processed_quant_6</code> (6 month old data) and <code>processed_quant_24</code> (24 month old data) as R objects (.rds files) to be loaded in.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># The 6 and 24 month samples were done as different experiments, so their data will be analysed separately. </span>
+
+<span class="co"># Import relevant MaxQuant files for 6 month samples, along with an annotation table describing the samples,</span>
+<span class="co"># and convert the data into a format compatible with MSstats. </span>
+proteinGroups_<span class="dv">6</span> &lt;-<span class="st"> </span><span class="kw">read.table</span>(<span class="kw">file.path</span>(dataDir, <span class="st">&quot;da_proteins/raw_peptides_6/proteinGroups.txt&quot;</span>), <span class="dt">sep=</span><span class="st">&quot;</span><span class="ch">\t</span><span class="st">&quot;</span>, <span class="dt">header=</span><span class="ot">TRUE</span>)
+infile_<span class="dv">6</span> &lt;-<span class="st"> </span><span class="kw">read.table</span>(<span class="kw">file.path</span>(dataDir, <span class="st">&quot;da_proteins/raw_peptides_6/evidence.txt&quot;</span>), <span class="dt">sep=</span><span class="st">&quot;</span><span class="ch">\t</span><span class="st">&quot;</span>, <span class="dt">header=</span><span class="ot">TRUE</span>)
+annot_<span class="dv">6</span> &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">file.path</span>(dataDir, <span class="st">&quot;da_proteins/raw_peptides_6/annot.csv&quot;</span>))
+quant_<span class="dv">6</span> &lt;-<span class="st"> </span><span class="kw">MaxQtoMSstatsFormat</span>(<span class="dt">evidence =</span> infile_<span class="dv">6</span>, <span class="dt">proteinGroups =</span> proteinGroups_<span class="dv">6</span>, <span class="dt">annotation =</span> annot_<span class="dv">6</span>)
+
+<span class="co"># Do the same for the 24 month data. </span>
+proteinGroups_<span class="dv">24</span> &lt;-<span class="st"> </span><span class="kw">read.table</span>(<span class="kw">file.path</span>(dataDir, <span class="st">&quot;da_proteins/raw_peptides_24/proteinGroups.txt&quot;</span>), <span class="dt">sep=</span><span class="st">&quot;</span><span class="ch">\t</span><span class="st">&quot;</span>, <span class="dt">header=</span><span class="ot">TRUE</span>)
+infile_<span class="dv">24</span> &lt;-<span class="st"> </span><span class="kw">read.table</span>(<span class="kw">file.path</span>(dataDir, <span class="st">&quot;da_proteins/raw_peptides_24/evidence.txt&quot;</span>), <span class="dt">sep=</span><span class="st">&quot;</span><span class="ch">\t</span><span class="st">&quot;</span>, <span class="dt">header=</span><span class="ot">TRUE</span>)
+annot_<span class="dv">24</span> &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">file.path</span>(dataDir, <span class="st">&quot;da_proteins/raw_peptides_24/annot.csv&quot;</span>))
+quant_<span class="dv">24</span> &lt;-<span class="st"> </span><span class="kw">MaxQtoMSstatsFormat</span>(<span class="dt">evidence =</span> infile_<span class="dv">24</span>, <span class="dt">proteinGroups =</span> proteinGroups_<span class="dv">24</span>, <span class="dt">annotation =</span> annot_<span class="dv">24</span>)
+
+<span class="co"># Use the dataProcess function from MaxQuant to perform the pre-processing steps for the 6 month samples.</span>
+processed_quant_<span class="dv">6</span> &lt;-<span class="st"> </span><span class="kw">dataProcess</span>(
+  quant_<span class="dv">6</span>, 
+  <span class="dt">normalization =</span> <span class="st">&quot;quantile&quot;</span>, 
+  <span class="dt">summaryMethod =</span> <span class="st">&quot;TMP&quot;</span>, <span class="co"># Tukey&#39;s median polish model performs protein-level summarisation based on median across rows and samples.</span>
+  <span class="dt">cutoffCensored =</span> <span class="st">&quot;minFeature&quot;</span>, 
+  <span class="dt">censoredInt =</span> <span class="st">&quot;NA&quot;</span>, <span class="co"># All intensities with NA values should be considered as missing. </span>
+  <span class="dt">MBimpute =</span> <span class="ot">TRUE</span> <span class="co"># Use Accelerated Failure Time omdel to impute missing intensities.   </span>
+  )
+
+<span class="co"># Do the same with the 24 month data. </span>
+processed_quant_<span class="dv">24</span> &lt;-<span class="st"> </span><span class="kw">dataProcess</span>(
+  quant_<span class="dv">24</span>, 
+  <span class="dt">normalization =</span> <span class="st">&quot;quantile&quot;</span>, 
+  <span class="dt">summaryMethod =</span> <span class="st">&quot;TMP&quot;</span>, 
+  <span class="dt">cutoffCensored =</span> <span class="st">&quot;minFeature&quot;</span>, 
+  <span class="dt">censoredInt =</span> <span class="st">&quot;NA&quot;</span>, 
+  <span class="dt">MBimpute =</span> <span class="ot">TRUE</span>
+  )
+
+<span class="co"># saveRDS(processed_quant_6, &quot;da_proteins/processed_quant_6.rds&quot;)</span>
+<span class="co"># saveRDS(processed_quant_24, &quot;da_proteins/processed_quant_24.rds&quot;)</span></code></pre></div>
+<p>The processed data are in the <code>processed_quant_6</code> and <code>processed_quant_24</code> objects for the 6 and 24 month datasets respectively. The processed peptide-level data are in the <code>$ProcessedData</code> slot while the processed protein-level data are in the <code>$RunLevelData</code> slot. We will extract the protein-level intensities out for the technical replicate and biological replicates.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Import sample annotations and characteristics for the 6 and 24 month samples. </span>
+<span class="co"># This is just a spreadsheet with columns corresponding to sample metadata </span>
+<span class="co"># and rows corresponding to sammples. </span>
+annot &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">file.path</span>(dataDir, <span class="st">&quot;da_proteins/annot_6_24_combined.csv&quot;</span>)) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">mutate_if</span>(is.character, factor) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">Group =</span> <span class="kw">as.factor</span>(<span class="kw">paste0</span>(Condition, <span class="st">&quot;_&quot;</span>, Age))) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">arrange</span>(Age, <span class="kw">desc</span>(Condition))
+
+<span class="co"># Read in the result of MSstats dataProcess for the 6 and 24 month samples. </span>
+<span class="co"># The ProcessedData slot includes peptide-level info while the RunLevelData slot</span>
+<span class="co"># includes &quot;run&quot; or protein-level info.</span>
+processed_quant_<span class="dv">6</span> &lt;-<span class="st"> </span><span class="kw">readRDS</span>(<span class="kw">file.path</span>(dataDir, <span class="st">&quot;da_proteins/processed_quant_6.rds&quot;</span>))
+processed_quant_<span class="dv">24</span> &lt;-<span class="st"> </span><span class="kw">readRDS</span>(<span class="kw">file.path</span>(dataDir, <span class="st">&quot;da_proteins/processed_quant_24.rds&quot;</span>))
+
+<span class="co"># Add sample annotation to the processed protein quantification data.</span>
+processed_quant_<span class="dv">6</span><span class="op">$</span>RunlevelData <span class="op">%&lt;&gt;%</span><span class="st"> </span><span class="kw">left_join</span>(annot, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;originalRUN&quot;</span>=<span class="st">&quot;Raw.file&quot;</span>))
+processed_quant_<span class="dv">24</span><span class="op">$</span>RunlevelData <span class="op">%&lt;&gt;%</span><span class="st"> </span><span class="kw">left_join</span>(annot, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;originalRUN&quot;</span>=<span class="st">&quot;Raw.file&quot;</span>))</code></pre></div>
+<p>The distributions of peptides for each sample are shown in the following boxplots. It is evident that the quantiles of each sample are the same in all of the 6 month samples, and separately, in the 24 month samples. However, the 24 month samples seem to have overall lower intensities compared to the 6 month samples. This suggests that if we want to combine the two datasets to do a combined analysis (e.g. so that we can perform the comparison to find differentially abundant proteins between young mutants and wildtypes), we will have to correct for this systematic bias and normalise the intensities. Otherwise most proteins would be considered “differentially abundant” if we were comparing any 6 month samples to 24 month samples.</p>
+<div class="figure"><span id="fig:Peptide-Distribution-Boxplots"></span>
+<img src="_main_files/figure-html/Peptide-Distribution-Boxplots-1.png" alt="Boxplots showing the peptide intensity distributions for each sample (technical replicate) in the K97Gfs dataset." width="770px" />
+<p class="caption">
+Figure 2.1: Boxplots showing the peptide intensity distributions for each sample (technical replicate) in the K97Gfs dataset.
+</p>
+</div>
+<p>The peptides can be reconstructed and summarised at the protein-level as well for each sample. When we do this, the protein intensity distributions vary slightly more between samples, and the quantiles are no longer as equal, as shown in the boxplots below.</p>
+<div class="figure"><span id="fig:Protein-Distribution-Boxplots"></span>
+<img src="_main_files/figure-html/Protein-Distribution-Boxplots-1.png" alt="Boxplots showing the protein intensity distributions for each sample (technical replicate) in the K97Gfs dataset." width="770px" />
+<p class="caption">
+Figure 2.2: Boxplots showing the protein intensity distributions for each sample (technical replicate) in the K97Gfs dataset.
+</p>
+</div>
+</div>
+<div id="normalisation-of-6-month-and-24-month-datasets" class="section level3">
+<h3><span class="header-section-number">2.2.2</span> Normalisation of 6 month and 24 month datasets</h3>
+<p>Because of the systematic bias towards lower protein intensities in the 24 month samples, differential abundance analysis is likely to be inaccurate unless an additional normalisation step is performed to make the 6 and 24 month datasets more comparable.</p>
+<p>Here, we will apply quantile normalisation to equalise the quantiles of the 6 and 24 month datasets.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Extract the biological replicate processed protein intensities and join the two datasets.</span>
+<span class="co"># We will also extract the protein db, UniqueIdentifier and EntryName from the Fasta header</span>
+<span class="co"># in the Protein column. </span>
+biorepquant_<span class="dv">6</span> &lt;-<span class="st"> </span>processed_quant_<span class="dv">6</span><span class="op">$</span>RunlevelData <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">dcast</span>(Protein <span class="op">~</span><span class="st"> </span>NameBioRep, <span class="dt">value.var =</span> <span class="st">&quot;LogIntensities&quot;</span>, <span class="dt">fun.aggregate =</span> median) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(
+    <span class="dt">Protein =</span> <span class="kw">gsub</span>(<span class="dt">x =</span> Protein, <span class="dt">pattern =</span> <span class="st">&quot;;.*$|.*__&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;&quot;</span>),
+    <span class="dt">db =</span> <span class="kw">gsub</span>(<span class="dt">x=</span> Protein, <span class="dt">pattern =</span> <span class="st">&quot;^([[:alpha:]]{2}).*$&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;</span><span class="ch">\\</span><span class="st">1&quot;</span>),
+    <span class="dt">UniqueIdentifier =</span> <span class="kw">gsub</span>(<span class="dt">x =</span> Protein, <span class="dt">pattern =</span> <span class="st">&quot;^[[:alpha:]]{2}</span><span class="ch">\\</span><span class="st">|([[:alnum:]]*)</span><span class="ch">\\</span><span class="st">|.*$&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;</span><span class="ch">\\</span><span class="st">1&quot;</span>),
+    <span class="dt">EntryName =</span> <span class="kw">gsub</span>(<span class="dt">x =</span> Protein, <span class="dt">pattern =</span> <span class="st">&quot;.*</span><span class="ch">\\</span><span class="st">|&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;&quot;</span>)) <span class="co">#534 rows </span>
+biorepquant_<span class="dv">24</span> &lt;-<span class="st"> </span>processed_quant_<span class="dv">24</span><span class="op">$</span>RunlevelData <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">dcast</span>(Protein <span class="op">~</span><span class="st"> </span>NameBioRep, <span class="dt">value.var =</span> <span class="st">&quot;LogIntensities&quot;</span>, <span class="dt">fun.aggregate =</span> median) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(
+    <span class="dt">Protein =</span> <span class="kw">gsub</span>(<span class="dt">x =</span> Protein, <span class="dt">pattern =</span> <span class="st">&quot;;.*$|.*__&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;&quot;</span>),
+    <span class="dt">db =</span> <span class="kw">gsub</span>(<span class="dt">x=</span> Protein, <span class="dt">pattern =</span> <span class="st">&quot;^([[:alpha:]]{2}).*$&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;</span><span class="ch">\\</span><span class="st">1&quot;</span>),
+    <span class="dt">UniqueIdentifier =</span> <span class="kw">gsub</span>(<span class="dt">x =</span> Protein, <span class="dt">pattern =</span> <span class="st">&quot;^[[:alpha:]]{2}</span><span class="ch">\\</span><span class="st">|([[:alnum:]]*)</span><span class="ch">\\</span><span class="st">|.*$&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;</span><span class="ch">\\</span><span class="st">1&quot;</span>),
+    <span class="dt">EntryName =</span> <span class="kw">gsub</span>(<span class="dt">x =</span> Protein, <span class="dt">pattern =</span> <span class="st">&quot;.*</span><span class="ch">\\</span><span class="st">|&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;&quot;</span>)) <span class="co">#582 rows</span>
+
+<span class="co"># Convert the column containing protein IDs to character rather than factor. </span>
+biorepquant_<span class="dv">6</span><span class="op">$</span>Protein <span class="op">%&lt;&gt;%</span><span class="st"> </span>as.character
+biorepquant_<span class="dv">24</span><span class="op">$</span>Protein <span class="op">%&lt;&gt;%</span><span class="st"> </span>as.character
+
+<span class="co"># Do a full join to retain all proteins from the 6 month and 24 month datasets. </span>
+biorepquant &lt;-<span class="st"> </span><span class="kw">full_join</span>(biorepquant_<span class="dv">6</span>, biorepquant_<span class="dv">24</span>, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;UniqueIdentifier&quot;</span>, <span class="st">&quot;db&quot;</span>, <span class="st">&quot;EntryName&quot;</span>, <span class="st">&quot;Protein&quot;</span>)) <span class="co"># 688 proteins</span>
+
+<span class="co"># Normalise the datasets with an additional quantile normalisation due </span>
+<span class="co"># to systematic bias in that the 24 month samples have lower overall protein</span>
+<span class="co"># intensities since  6 and 24 month datasets are from separate batches (experiments). </span>
+biorepquant_norm &lt;-<span class="st"> </span>biorepquant <span class="op">%&gt;%</span>
+<span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="kw">contains</span>(<span class="st">&quot;mth&quot;</span>)) <span class="op">%&gt;%</span>
+<span class="st">  </span>as.matrix <span class="op">%&gt;%</span>
+<span class="st">  </span>limma<span class="op">::</span><span class="kw">normalizeQuantiles</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="co"># Apply quantile normalization fromm the limma package. </span>
+<span class="st">  </span><span class="kw">set_rownames</span>(biorepquant<span class="op">$</span>UniqueIdentifier) 
+
+<span class="co"># Filter the resulting 688 proteins down to 323 proteins by retaining only</span>
+<span class="co"># proteins with no NAs across all biological samples. </span>
+biorepquant_norm_filtered &lt;-<span class="st"> </span>biorepquant_norm <span class="op">%&gt;%</span>
+<span class="st">  </span>as.data.frame <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">rownames_to_column</span>(<span class="st">&quot;UniqueIdentifier&quot;</span>) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">filter</span>(<span class="kw">complete.cases</span>(.)) <span class="op">%&gt;%</span><span class="st">  </span><span class="co">#Retain only proteins that have no NAs across all samples. </span>
+<span class="st">  </span><span class="kw">column_to_rownames</span>(<span class="st">&quot;UniqueIdentifier&quot;</span>) <span class="op">%&gt;%</span>
+<span class="st">  </span>as.matrix 
+
+biorepquant &lt;-<span class="st"> </span>biorepquant_norm_filtered</code></pre></div>
+<p>After the additional quantile normalisation step, followed by filtering the proteins to retain those which show expression across all samples, we would expect that the quantiles of the protein intensity distributions of the 6 and 24 month samples would align more. This is shown in the following boxplots, which indicate the the quantiles of 6 and 24 month samples are very similar and the systematic bias is no longer present.</p>
+<div class="figure"><span id="fig:Biorep-protein-distributions"></span>
+<img src="_main_files/figure-html/Biorep-protein-distributions-1.png" alt="Boxplots of the quantile normalised protein intensity distributions for each biological sample in the combined 6 and 24 month dataset." width="672" />
+<p class="caption">
+Figure 2.3: Boxplots of the quantile normalised protein intensity distributions for each biological sample in the combined 6 and 24 month dataset.
+</p>
+</div>
+</div>
+<div id="protein-annotation" class="section level3">
+<h3><span class="header-section-number">2.2.3</span> Protein Annotation</h3>
+<p>Proteins detected in the combined 6 and 24 month sammples can be annotated with their protein names, gene names and gene ontology terms from the <em>UniProt</em> database, using the UniProtKB <code>UniqueIdentifier</code> extracted above. We will also obtain the corresponding Ensembl and entrezgene identifiers for each protein to facilitate comparison with our RNA-seq dataset later on.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Use the UNIPROTKB UniqueIdentifier to retrieve information from the zebrafish UniProt database. </span>
+uniprotInfo &lt;-<span class="st"> </span><span class="kw">select</span>(up, <span class="dt">columns =</span> <span class="kw">c</span>(<span class="st">&quot;UNIPROTKB&quot;</span>, <span class="st">&quot;PROTEIN-NAMES&quot;</span>, <span class="st">&quot;ENSEMBL&quot;</span>, <span class="st">&quot;ENTREZ_GENE&quot;</span>, <span class="st">&quot;GENES&quot;</span>, <span class="st">&quot;GO&quot;</span>), 
+                         <span class="dt">keys =</span> <span class="kw">rownames</span>(biorepquant), <span class="dt">keytype =</span> <span class="st">&quot;UNIPROTKB&quot;</span>)
+
+<span class="co"># Join protein annotations onto the original biorepquant object. </span>
+biorepquant <span class="op">%&lt;&gt;%</span><span class="st"> </span>as.data.frame <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">rownames_to_column</span>(<span class="st">&quot;UniqueIdentifier&quot;</span>) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">left_join</span>(uniprotInfo, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;UniqueIdentifier&quot;</span>=<span class="st">&quot;UNIPROTKB&quot;</span>)) <span class="op">%&gt;%</span>
+<span class="st">  </span>as.data.frame <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">distinct</span>(UniqueIdentifier, <span class="dt">.keep_all=</span><span class="ot">TRUE</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">column_to_rownames</span>(<span class="st">&quot;UniqueIdentifier&quot;</span>) 
+
+<span class="co"># saveRDS(biorepquant, &quot;da_proteins/biorepquant_withInfo.rds&quot;)</span></code></pre></div>
+</div>
+</div>
+<div id="exploratory-data-analysis" class="section level2">
+<h2><span class="header-section-number">2.3</span> Exploratory Data Analysis</h2>
+<div id="correlation-between-6-and-24-month-samples" class="section level3">
+<h3><span class="header-section-number">2.3.1</span> Correlation between 6 and 24 month samples</h3>
+<p>The Pearson correlation between the samples is one method of assessing how similar they are to each other. We would expect that samples that have the same age and <em>psen1</em> genotype would tend to have higher Pearson correlation coefficients. The correlation matrix between 6 and 24 month old samples is shown below.</p>
+<div class="figure"><span id="fig:Correlation-biological-samples"></span>
+<img src="_main_files/figure-html/Correlation-biological-samples-1.png" alt="Pearson correlation matrix of the 6 and 24 month samples from the K97fs dataset." width="672" />
+<p class="caption">
+Figure 2.4: Pearson correlation matrix of the 6 and 24 month samples from the K97fs dataset.
+</p>
+</div>
+<p>Overall, the protein intensities in the 6 month samples tend to be strongly correlated with each other (~0.8-9). However, these intensities are less strongly correlated between 6 and 24 month samples (~0.6). The effect of <em>psen1</em> mutation is likely quite small compared to the effect of aging from 6 to 24 months, and it isn’t easy to see if samples group by <em>psen1</em> mutation from the correlation plot above.</p>
+</div>
+<div id="principal-component-analysis" class="section level3">
+<h3><span class="header-section-number">2.3.2</span> Principal Component Analysis</h3>
+<p>Principal component analysis is another method to check sample grouping and similarity, and it may be beneficial for visualising the impact of <em>psen1</em> mutation on the similarity of samples. The Principal Component Analysis plot of the combined 6 and 24 month samples from the K97fs dataset is shown below. The samples separate by age across the first principal commponent, indicating that age likely represents the largest source of variation in the samples. There is some slight separation of samples across the second principal component corresponding to <em>psen1</em> genotype, indicating that this may represent at least partly the second largest source of variation in the samples.</p>
+<div class="figure"><span id="fig:PCA-biological-samples"></span>
+<img src="_main_files/figure-html/PCA-biological-samples-1.png" alt="Principal component analysis plot of the first two principal components in the combined 6 month and 24 month K97fs dataset." width="672" />
+<p class="caption">
+Figure 2.5: Principal component analysis plot of the first two principal components in the combined 6 month and 24 month K97fs dataset.
+</p>
+</div>
+</div>
+</div>
+<div id="differential-protein-abundance-analysis" class="section level2">
+<h2><span class="header-section-number">2.4</span> Differential protein abundance analysis</h2>
+<p>Differential protein abundance analysis will be done using <em>limma</em>, which uses a moderated <em>t</em>-test and empirical Bayes approach to analyse microarray and RNA-seq datasets and detect potential differential expression between samples. However, it has been shown that the methods used by <em>limma</em> are also applicable to proteomics datasets, and provide greater power to detect changes in protein abundance when compared to a normal <em>t</em>-test (<a href="https://doi.org/10.1016/j.euprot.2015.02.002">Kammers et al. 2015</a>; <a href="http://doi.org/10.1021/pr400045u">Schwämmle et al. 2013</a>).</p>
+<p>In addition, <a href="https://support.bioconductor.org/p/64484/">several</a> <a href="https://support.bioconductor.org/p/69718/">Biostars</a> <a href="https://support.bioconductor.org/p/57004/">posts</a> provide tips for using <em>limma</em> to analyse proteomics data.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dge_biorep &lt;-<span class="st"> </span>biorepquant <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span>as.data.frame <span class="op">%&gt;%</span>
+<span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="kw">contains</span>(<span class="st">&quot;6mth&quot;</span>), <span class="kw">contains</span>(<span class="st">&quot;24mth&quot;</span>))  <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span>as.matrix <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span>edgeR<span class="op">::</span><span class="kw">DGEList</span>() <span class="op">%&gt;%</span>
+<span class="st">  </span>edgeR<span class="op">::</span><span class="kw">calcNormFactors</span>(<span class="dt">method =</span> <span class="st">&quot;none&quot;</span>)  
+
+<span class="co"># Add sample data to DGEList object. </span>
+dge_biorep<span class="op">$</span>samples <span class="op">%&lt;&gt;%</span>
+<span class="st">  </span><span class="kw">rownames_to_column</span>(<span class="st">&quot;sample&quot;</span>) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">left_join</span>(annot[annot<span class="op">$</span>TechReplicate<span class="op">==</span><span class="dv">1</span>, ], <span class="dt">by=</span><span class="kw">c</span>(<span class="st">&quot;sample&quot;</span>=<span class="st">&quot;NameBioRep&quot;</span>)) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">as.data.frame</span>() <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">column_to_rownames</span>(<span class="st">&quot;sample&quot;</span>)
+
+<span class="co"># Add protein info to DGEList object. </span>
+dge_biorep<span class="op">$</span>genes &lt;-<span class="st"> </span>biorepquant <span class="op">%&gt;%</span>
+<span class="st">  </span>as.data.frame <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">rownames_to_column</span>(<span class="st">&quot;UniqueIdentifier&quot;</span>) <span class="op">%&gt;%</span>
+<span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(UniqueIdentifier, <span class="st">`</span><span class="dt">PROTEIN-NAMES</span><span class="st">`</span>, ENSEMBL, ENTREZ_GENE, GENES, GO) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">column_to_rownames</span>(<span class="st">&quot;UniqueIdentifier&quot;</span>) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">extract</span>(<span class="kw">rownames</span>(dge_biorep<span class="op">$</span>counts),)</code></pre></div>
+<p>Several aspects of the <em>limma</em> analysis include:</p>
+<ul>
+<li>The protein intensities have been previously log2 transformed and quantile normalised. No additional normalisation has been performed since then.</li>
+<li>Sample-level weights are estimated using <em>limma</em>’s <code>arrayWeights</code> function and the design matrix. This estimates a scaling factor for each sample that represents the weighting, or importance that each sample is given in the rest of the analysis. Highly variable samples tend to be downweighted as they are considered potentially more like outliers.</li>
+<li>The linear model is fit to each protein to determine whether it might show differential abundance while accounting for the sample-level weights.</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Create design matrix using Group as the explanatory variable.</span>
+<span class="co"># Levels of Group are K97_24, K97_6, NM_24, NM_6</span>
+design_biorep &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(<span class="op">~</span><span class="dv">0</span> <span class="op">+</span><span class="st"> </span>Group, <span class="dt">data =</span> dge_biorep<span class="op">$</span>samples) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">set_colnames</span>(<span class="kw">gsub</span>(<span class="dt">x=</span><span class="kw">colnames</span>(.), <span class="dt">pattern =</span> <span class="st">&quot;Group&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;&quot;</span>))
+
+<span class="co"># Define contrasts / comparisons between groups. </span>
+contrasts_biorep &lt;-<span class="st"> </span><span class="kw">makeContrasts</span>(
+  <span class="dt">levels =</span> <span class="kw">colnames</span>(design_biorep),
+  <span class="dt">K97_mutYoung_wtYoung =</span> K97_<span class="dv">6</span><span class="op">-</span>NM_<span class="dv">6</span>,
+  <span class="dt">K97_mutOld_wtOld =</span> K97_<span class="dv">24</span><span class="op">-</span>NM_<span class="dv">24</span>,
+  <span class="dt">K97_wtOld_wtYoung =</span> NM_<span class="dv">24</span><span class="op">-</span>NM_<span class="dv">6</span>,
+  <span class="dt">K97_mutOld_mutYoung =</span> K97_<span class="dv">24</span><span class="op">-</span>K97_<span class="dv">6</span>
+)
+
+<span class="co"># Estimate sample-level weights using the groups defined in design matrix.</span>
+weights_biorep &lt;-<span class="st"> </span><span class="kw">arrayWeights</span>(dge_biorep<span class="op">$</span>counts, design_biorep) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">set_names</span>(<span class="kw">colnames</span>(dge_biorep<span class="op">$</span>counts))
+
+<span class="co"># Fit the generalized linear model</span>
+fit_biorep &lt;-<span class="st"> </span><span class="kw">lmFit</span>(dge_biorep<span class="op">$</span>counts, design_biorep, <span class="dt">weights =</span> weights_biorep) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">contrasts.fit</span>(contrasts_biorep) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">eBayes</span>(<span class="dt">robust =</span> <span class="ot">TRUE</span>, <span class="dt">trend =</span> <span class="ot">TRUE</span>)
+<span class="co">#plotSA(fit_biorep)</span>
+
+<span class="co"># Get summary of up and down regulated proteins for each comparison</span>
+results_biorep &lt;-<span class="st"> </span><span class="kw">decideTests</span>(fit_biorep, <span class="dt">p.value=</span><span class="fl">0.05</span>, <span class="dt">lfc =</span> <span class="dv">0</span>, <span class="dt">adjust.method=</span><span class="st">&quot;fdr&quot;</span>, <span class="dt">method =</span> <span class="st">&quot;global&quot;</span>) 
+results2_biorep &lt;-<span class="kw">decideTests</span>(fit_biorep, <span class="dt">p.value=</span><span class="fl">0.05</span>, <span class="dt">lfc =</span> <span class="dv">0</span>, <span class="dt">adjust.method=</span><span class="st">&quot;fdr&quot;</span>, <span class="dt">method =</span> <span class="st">&quot;global&quot;</span>)  
+<span class="kw">summary</span>(results_biorep)</code></pre></div>
+<pre><code>##    K97_mutYoung_wtYoung K97_mutOld_wtOld K97_wtOld_wtYoung
+## -1                   10               30                82
+## 0                   301              258               163
+## 1                    12               35                78
+##    K97_mutOld_mutYoung
+## -1                  84
+## 0                  172
+## 1                   67</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Export results using limma&#39;s write.fit function. </span>
+<span class="co"># write.fit(fit_biorep, results = results_biorep, file = file.path(dataDir, &quot;da_proteins/da_protein_results.txt&quot;), digits = 9, adjust = &quot;fdr&quot;, method = &quot;global&quot;, sep = &quot;\t&quot;)</span>
+
+
+protein_results &lt;-<span class="st"> </span><span class="kw">read_tsv</span>(<span class="kw">file.path</span>(dataDir, <span class="st">&quot;da_proteins/da_protein_results.txt&quot;</span>)) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">bind_cols</span>(dge_biorep<span class="op">$</span>genes<span class="op">%&gt;%</span><span class="kw">rownames_to_column</span>(<span class="st">&quot;ensembl_gene_id&quot;</span>))
+
+DA_proteins &lt;-<span class="st"> </span><span class="kw">list</span>()
+DA_proteins[[<span class="st">&quot;K97_mutYoung_wtYoung&quot;</span>]] &lt;-<span class="st"> </span>protein_results <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">filter</span>(Res.K97_mutYoung_wtYoung <span class="op">!=</span><span class="st"> </span><span class="dv">0</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span>dplyr<span class="op">::</span><span class="kw">arrange</span>(p.value.adj.K97_mutYoung_wtYoung) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">firstProtein =</span> <span class="kw">gsub</span>(<span class="dt">x =</span> <span class="st">`</span><span class="dt">PROTEIN-NAMES</span><span class="st">`</span>, <span class="dt">pattern =</span> <span class="st">&quot; </span><span class="ch">\\</span><span class="st">(.*$&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;&quot;</span>),
+         <span class="dt">firstGene =</span> <span class="kw">gsub</span>(<span class="dt">x =</span> GENES, <span class="dt">pattern =</span> <span class="st">&quot; .*$&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;&quot;</span>),
+         <span class="dt">firstProteinAndGene =</span> <span class="kw">paste0</span>(firstProtein, <span class="st">&quot; (&quot;</span>, firstGene, <span class="st">&quot;)&quot;</span>)) 
+
+DA_proteins[[<span class="st">&quot;K97_mutOld_wtOld&quot;</span>]] &lt;-<span class="st"> </span>protein_results <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">filter</span>(Res.K97_mutOld_wtOld <span class="op">!=</span><span class="st"> </span><span class="dv">0</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span>dplyr<span class="op">::</span><span class="kw">arrange</span>(p.value.adj.K97_mutOld_wtOld) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">firstProtein =</span> <span class="kw">gsub</span>(<span class="dt">x =</span> <span class="st">`</span><span class="dt">PROTEIN-NAMES</span><span class="st">`</span>, <span class="dt">pattern =</span> <span class="st">&quot; </span><span class="ch">\\</span><span class="st">(.*$&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;&quot;</span>),
+         <span class="dt">firstGene =</span> <span class="kw">gsub</span>(<span class="dt">x =</span> GENES, <span class="dt">pattern =</span> <span class="st">&quot; .*$&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;&quot;</span>),
+         <span class="dt">firstProteinAndGene =</span> <span class="kw">paste0</span>(firstProtein, <span class="st">&quot; (&quot;</span>, firstGene, <span class="st">&quot;)&quot;</span>)) 
+
+DA_proteins[[<span class="st">&quot;K97_mutOld_mutYoung&quot;</span>]] &lt;-<span class="st"> </span>protein_results <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">filter</span>(Res.K97_mutOld_mutYoung <span class="op">!=</span><span class="st"> </span><span class="dv">0</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span>dplyr<span class="op">::</span><span class="kw">arrange</span>(p.value.adj.K97_mutOld_mutYoung) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">firstProtein =</span> <span class="kw">gsub</span>(<span class="dt">x =</span> <span class="st">`</span><span class="dt">PROTEIN-NAMES</span><span class="st">`</span>, <span class="dt">pattern =</span> <span class="st">&quot; </span><span class="ch">\\</span><span class="st">(.*$&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;&quot;</span>),
+         <span class="dt">firstGene =</span> <span class="kw">gsub</span>(<span class="dt">x =</span> GENES, <span class="dt">pattern =</span> <span class="st">&quot; .*$&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;&quot;</span>),
+         <span class="dt">firstProteinAndGene =</span> <span class="kw">paste0</span>(firstProtein, <span class="st">&quot; (&quot;</span>, firstGene, <span class="st">&quot;)&quot;</span>)) 
+
+DA_proteins[[<span class="st">&quot;K97_wtOld_wtYoung&quot;</span>]] &lt;-<span class="st"> </span>protein_results <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">filter</span>(Res.K97_wtOld_wtYoung <span class="op">!=</span><span class="st"> </span><span class="dv">0</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span>dplyr<span class="op">::</span><span class="kw">arrange</span>(p.value.adj.K97_wtOld_wtYoung) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">firstProtein =</span> <span class="kw">gsub</span>(<span class="dt">x =</span> <span class="st">`</span><span class="dt">PROTEIN-NAMES</span><span class="st">`</span>, <span class="dt">pattern =</span> <span class="st">&quot; </span><span class="ch">\\</span><span class="st">(.*$&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;&quot;</span>),
+         <span class="dt">firstGene =</span> <span class="kw">gsub</span>(<span class="dt">x =</span> GENES, <span class="dt">pattern =</span> <span class="st">&quot; .*$&quot;</span>, <span class="dt">replacement =</span> <span class="st">&quot;&quot;</span>),
+         <span class="dt">firstProteinAndGene =</span> <span class="kw">paste0</span>(firstProtein, <span class="st">&quot; (&quot;</span>, firstGene, <span class="st">&quot;)&quot;</span>)) 
+
+
+
+
+<span class="co"># Export results of limma analysis using a  custom topTable function</span>
+proteinList_biorep &lt;-<span class="st"> </span><span class="kw">list</span>()
+proteinList_biorep[[<span class="st">&quot;K97_mutOld_wtOld&quot;</span>]] &lt;-<span class="st"> </span><span class="kw">getDAProteins</span>(<span class="st">&quot;K97_mutOld_wtOld&quot;</span>, fit_biorep)
+proteinList_biorep[[<span class="st">&quot;K97_mutYoung_wtYoung&quot;</span>]] &lt;-<span class="st"> </span><span class="kw">getDAProteins</span>(<span class="st">&quot;K97_mutYoung_wtYoung&quot;</span>, fit_biorep)
+proteinList_biorep[[<span class="st">&quot;K97_wtOld_wtYoung&quot;</span>]] &lt;-<span class="st"> </span><span class="kw">getDAProteins</span>(<span class="st">&quot;K97_wtOld_wtYoung&quot;</span>, fit_biorep)
+proteinList_biorep[[<span class="st">&quot;K97_mutOld_mutYoung&quot;</span>]] &lt;-<span class="st"> </span><span class="kw">getDAProteins</span>(<span class="st">&quot;K97_mutOld_mutYoung&quot;</span>, fit_biorep)
+proteinList_biorep[[<span class="st">&quot;AllComparisons&quot;</span>]] &lt;-<span class="st"> </span><span class="kw">topTable</span>(fit_biorep, <span class="dt">n =</span> <span class="ot">Inf</span>, <span class="dt">p.value =</span> <span class="fl">0.05</span>, <span class="dt">adjust.method =</span> <span class="st">&quot;fdr&quot;</span>, <span class="dt">genelist =</span> dge_biorep<span class="op">$</span>genes) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">rownames_to_column</span>(<span class="st">&quot;UniqueIdentifier&quot;</span>)</code></pre></div>
+</div>
+<div id="results-1" class="section level2">
+<h2><span class="header-section-number">2.5</span> Results</h2>
+<div id="effect-of-the-k97fs-mutation-on-protein-abundance" class="section level3">
+<h3><span class="header-section-number">2.5.1</span> Effect of the K97fs Mutation on Protein Abundance</h3>
+<p>The following two volcano plots show the differentially abundant proteins detected at 6 months and at 24 months, when comparing K97Gfs/+ samples to age-matched +/+ samples.</p>
+<div class="figure"><span id="fig:Volcano-Plots-Mutant-vs-Wt"></span>
+<img src="_main_files/figure-html/Volcano-Plots-Mutant-vs-Wt-1.png" alt="Volcano plots showing differentially abundant proteins between K97Gfs/+ and +/+ samples at 6 and 24 months. The grey line corresponds to the significance level cutoff (False Discovery Rate adjusted p-value of 0.05) and the turquoise line corresponds to a raw p-value of 0.05." width="672" />
+<p class="caption">
+Figure 2.6: Volcano plots showing differentially abundant proteins between K97Gfs/+ and +/+ samples at 6 and 24 months. The grey line corresponds to the significance level cutoff (False Discovery Rate adjusted p-value of 0.05) and the turquoise line corresponds to a raw p-value of 0.05.
+</p>
+</div>
+<div id="effect-of-k97gfs-on-protein-abundance-at-6-months" class="section level4">
+<h4><span class="header-section-number">2.5.1.1</span> Effect of K97Gfs/+ on Protein Abundance at 6 Months</h4>
+<p>There are 1 proteins which are differentially abundant between wildtypes and mutants at 6 months: Superoxide dismutase [Cu-Zn] (adjusted p-value &lt; 0.05). Several proteins have adjusted p-values between 0.05 and 0.06. The heatmap below shows the top 10 differentially abundant proteins (ranging from adjusted p value of 0.01 to 0.06).</p>
+<div class="figure"><span id="fig:Heatmap-DA-Proteins-mutYoung-wtYoung"></span>
+<img src="_main_files/figure-html/Heatmap-DA-Proteins-mutYoung-wtYoung-1.png" alt="Differentially Abundant Proteins at 6 months in the K97Gfs dataset. Significance level of 0.05 is used. Numbers in heatmap are normalised log2 protein intensities." width="672" />
+<p class="caption">
+Figure 2.7: Differentially Abundant Proteins at 6 months in the K97Gfs dataset. Significance level of 0.05 is used. Numbers in heatmap are normalised log2 protein intensities.
+</p>
+</div>
+<div style="border: 1px solid #ddd; padding: 5px; overflow-y: scroll; height:770px; overflow-x: scroll; width:770px; ">
+<table class="table table-condensed" style="margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:Proteins-mutYoung-wtYoung">Table 2.2: </span>Differentially abundant proteins for the 6-month-old mutant vs. 6-month-old wild type comparison.
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Protein Name (Gene Name)
+</th>
+<th style="text-align:right;">
+logFC
+</th>
+<th style="text-align:right;">
+FDR adj. p-value
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Superoxide dismutase [Cu-Zn] (sod1)
+</td>
+<td style="text-align:right;">
+1.7827002
+</td>
+<td style="text-align:right;">
+0.0009229
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Protein LZIC (lzic)
+</td>
+<td style="text-align:right;">
+1.2202879
+</td>
+<td style="text-align:right;">
+0.0030382
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Adenylosuccinate synthetase isozyme 1 (adssl1)
+</td>
+<td style="text-align:right;">
+-2.1404729
+</td>
+<td style="text-align:right;">
+0.0031789
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Keratin, type II cytoskeletal 8 (krt8)
+</td>
+<td style="text-align:right;">
+-0.8450482
+</td>
+<td style="text-align:right;">
+0.0056631
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Paraspeckle component 1 (pspc1)
+</td>
+<td style="text-align:right;">
+1.6949365
+</td>
+<td style="text-align:right;">
+0.0059630
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Protein DJ-1zDJ-1 (park7)
+</td>
+<td style="text-align:right;">
+0.9670572
+</td>
+<td style="text-align:right;">
+0.0066543
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Cytochrome c oxidase subunit 2 (mt-co2)
+</td>
+<td style="text-align:right;">
+-0.9429096
+</td>
+<td style="text-align:right;">
+0.0066543
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NADH-ubiquinone oxidoreductase chain 4 (mt-nd4)
+</td>
+<td style="text-align:right;">
+-1.0970442
+</td>
+<td style="text-align:right;">
+0.0097342
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ATP synthase protein 8 (mt-atp8)
+</td>
+<td style="text-align:right;">
+-1.8668389
+</td>
+<td style="text-align:right;">
+0.0100021
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Anamorsin (ciapin1)
+</td>
+<td style="text-align:right;">
+1.0448598
+</td>
+<td style="text-align:right;">
+0.0119642
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Calcium uniporter protein, mitochondrial (mcu)
+</td>
+<td style="text-align:right;">
+-0.8732461
+</td>
+<td style="text-align:right;">
+0.0122066
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Probable 2-oxoglutarate dehydrogenase E1 component DHKTD1, mitochondrial (dhtkd1)
+</td>
+<td style="text-align:right;">
+-0.8478781
+</td>
+<td style="text-align:right;">
+0.0142207
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Hypoxia up-regulated protein 1 (hyou1)
+</td>
+<td style="text-align:right;">
+-1.4978001
+</td>
+<td style="text-align:right;">
+0.0144642
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Isoaspartyl peptidase/L-asparaginase (asrgl1)
+</td>
+<td style="text-align:right;">
+1.0324678
+</td>
+<td style="text-align:right;">
+0.0158947
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Nuclear distribution protein nudE-like 1-B (ndel1b)
+</td>
+<td style="text-align:right;">
+-1.0927114
+</td>
+<td style="text-align:right;">
+0.0210558
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Protein C10 (si:dkey-29f10.1)
+</td>
+<td style="text-align:right;">
+1.3132571
+</td>
+<td style="text-align:right;">
+0.0258687
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Apolipoprotein Eb (apoeb)
+</td>
+<td style="text-align:right;">
+1.3210531
+</td>
+<td style="text-align:right;">
+0.0291036
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SUMO-conjugating enzyme UBC9-B (ube2ib)
+</td>
+<td style="text-align:right;">
+0.7940908
+</td>
+<td style="text-align:right;">
+0.0291036
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Secernin-2 (scrn2)
+</td>
+<td style="text-align:right;">
+0.5799953
+</td>
+<td style="text-align:right;">
+0.0327170
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SH3 domain-binding glutamic acid-rich-like protein 2 (sh3bgrl2)
+</td>
+<td style="text-align:right;">
+0.7251151
+</td>
+<td style="text-align:right;">
+0.0340627
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Laminin subunit gamma-1 (lamc1)
+</td>
+<td style="text-align:right;">
+-0.9014839
+</td>
+<td style="text-align:right;">
+0.0381506
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Triosephosphate isomerase B (tpi1b)
+</td>
+<td style="text-align:right;">
+0.5144063
+</td>
+<td style="text-align:right;">
+0.0403128
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="effect-of-k97gfs-on-protein-abundance-at-24-months" class="section level4">
+<h4><span class="header-section-number">2.5.1.2</span> Effect of K97Gfs/+ on Protein Abundance at 24 Months</h4>
+<p>There are 60 proteins which are differentially abundant between wildtypes and mutants at 24 months (FDR-adjusted p-value &lt; 0.05). These are shown in the heatmap and table below.</p>
+<div class="figure"><span id="fig:Heatmap-DA-Proteins-mutOld-wtOld"></span>
+<img src="_main_files/figure-html/Heatmap-DA-Proteins-mutOld-wtOld-1.png" alt="Differentially Abundant Proteins at 24 months in the K97Gfs dataset. " width="672" />
+<p class="caption">
+Figure 2.8: Differentially Abundant Proteins at 24 months in the K97Gfs dataset.
+</p>
+</div>
+<div style="border: 1px solid #ddd; padding: 5px; overflow-y: scroll; height:770px; overflow-x: scroll; width:770px; ">
+<table class="table table-condensed" style="margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:Proteins-mutOld-wtOld">Table 2.3: </span>Differentially abundant proteins for the 24-month-old mutant vs. 24-month-old wild type comparison.
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Protein Name (Gene Name)
+</th>
+<th style="text-align:right;">
+logFC
+</th>
+<th style="text-align:right;">
+FDR adj. p-value
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+UPF0568 protein C14orf166 homolog (zgc:56576)
+</td>
+<td style="text-align:right;">
+2.6875962
+</td>
+<td style="text-align:right;">
+0.0000104
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Actin-related protein 2-B (actr2b)
+</td>
+<td style="text-align:right;">
+-2.0139698
+</td>
+<td style="text-align:right;">
+0.0007259
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Nascent polypeptide-associated complex subunit alpha (naca)
+</td>
+<td style="text-align:right;">
+-1.5502276
+</td>
+<td style="text-align:right;">
+0.0009680
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Carbonic anhydrase (cahz)
+</td>
+<td style="text-align:right;">
+-0.9214662
+</td>
+<td style="text-align:right;">
+0.0010269
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RNA-binding protein 4.1 (rbm4.1)
+</td>
+<td style="text-align:right;">
+-0.9446905
+</td>
+<td style="text-align:right;">
+0.0010954
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+60S ribosomal protein L24 (rpl24)
+</td>
+<td style="text-align:right;">
+2.3459543
+</td>
+<td style="text-align:right;">
+0.0011164
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Dynactin subunit 2 (dctn2)
+</td>
+<td style="text-align:right;">
+-0.9292179
+</td>
+<td style="text-align:right;">
+0.0011329
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+COP9 signalosome complex subunit 5 (cops5)
+</td>
+<td style="text-align:right;">
+1.7575703
+</td>
+<td style="text-align:right;">
+0.0011538
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+60S ribosomal protein L10a (rpl10a)
+</td>
+<td style="text-align:right;">
+1.3773314
+</td>
+<td style="text-align:right;">
+0.0012090
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+V-type proton ATPase subunit C 1-B (atp6v1c1b)
+</td>
+<td style="text-align:right;">
+1.0319887
+</td>
+<td style="text-align:right;">
+0.0017780
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Malignant T-cell-amplified sequence 1 (mcts1)
+</td>
+<td style="text-align:right;">
+-1.4433633
+</td>
+<td style="text-align:right;">
+0.0019222
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Prostamide/prostaglandin F synthase (fam213b)
+</td>
+<td style="text-align:right;">
+0.9876148
+</td>
+<td style="text-align:right;">
+0.0019553
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Synembryn-A (ric8a)
+</td>
+<td style="text-align:right;">
+1.3540481
+</td>
+<td style="text-align:right;">
+0.0022857
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Casein kinase I isoform gamma-1 (csnk1g1)
+</td>
+<td style="text-align:right;">
+1.2329034
+</td>
+<td style="text-align:right;">
+0.0028908
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+V-type proton ATPase subunit C 1-A (atp6v1c1a)
+</td>
+<td style="text-align:right;">
+0.7111384
+</td>
+<td style="text-align:right;">
+0.0029413
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ADP-ribosylation factor-like protein 8B-A (arl8ba)
+</td>
+<td style="text-align:right;">
+1.5653990
+</td>
+<td style="text-align:right;">
+0.0042921
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3-hydroxyisobutyryl-CoA hydrolase, mitochondrial (hibch)
+</td>
+<td style="text-align:right;">
+1.4179637
+</td>
+<td style="text-align:right;">
+0.0044022
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Mitochondrial Rho GTPase 1-A (rhot1a)
+</td>
+<td style="text-align:right;">
+1.0473969
+</td>
+<td style="text-align:right;">
+0.0048737
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Apolipoprotein A-I (apoa1)
+</td>
+<td style="text-align:right;">
+0.7941615
+</td>
+<td style="text-align:right;">
+0.0053904
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Phosphatidylinositide phosphatase SAC1-B (sacm1lb)
+</td>
+<td style="text-align:right;">
+1.5227175
+</td>
+<td style="text-align:right;">
+0.0055505
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Serine/threonine-protein phosphatase 4 catalytic subunit B (ppp4cb)
+</td>
+<td style="text-align:right;">
+-0.9177467
+</td>
+<td style="text-align:right;">
+0.0055505
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Betaine–homocysteine S-methyltransferase 1 (bhmt)
+</td>
+<td style="text-align:right;">
+-1.6272878
+</td>
+<td style="text-align:right;">
+0.0060891
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Protein tweety homolog 3 (ttyh3)
+</td>
+<td style="text-align:right;">
+-0.8451908
+</td>
+<td style="text-align:right;">
+0.0066543
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Neural cell adhesion molecule L1.1 (nadl1.1)
+</td>
+<td style="text-align:right;">
+-0.8779705
+</td>
+<td style="text-align:right;">
+0.0066561
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Interferon-inducible double-stranded RNA-dependent protein kinase activator A homolog (prkra)
+</td>
+<td style="text-align:right;">
+-1.0593306
+</td>
+<td style="text-align:right;">
+0.0068551
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Brain acid soluble protein 1 homolog (basp1)
+</td>
+<td style="text-align:right;">
+1.0878646
+</td>
+<td style="text-align:right;">
+0.0069387
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Guanine nucleotide-binding protein G(I)/G(S)/G(T) subunit beta-1 (gnb1)
+</td>
+<td style="text-align:right;">
+-0.6028537
+</td>
+<td style="text-align:right;">
+0.0082382
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Adenylosuccinate synthetase isozyme 1 (adssl1)
+</td>
+<td style="text-align:right;">
+1.6787306
+</td>
+<td style="text-align:right;">
+0.0084451
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NEDD8-activating enzyme E1 regulatory subunit (nae1)
+</td>
+<td style="text-align:right;">
+1.2204218
+</td>
+<td style="text-align:right;">
+0.0089160
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+LanC-like protein 1 (lancl1)
+</td>
+<td style="text-align:right;">
+0.6918085
+</td>
+<td style="text-align:right;">
+0.0090506
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+60S ribosomal protein L27 (rpl27)
+</td>
+<td style="text-align:right;">
+1.3860266
+</td>
+<td style="text-align:right;">
+0.0092215
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Glutaredoxin 3 (glrx3)
+</td>
+<td style="text-align:right;">
+-0.6211343
+</td>
+<td style="text-align:right;">
+0.0101642
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Phospholysine phosphohistidine inorganic pyrophosphate phosphatase (lhpp)
+</td>
+<td style="text-align:right;">
+-0.9464653
+</td>
+<td style="text-align:right;">
+0.0119661
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Selenium-binding protein 1 (selenbp1)
+</td>
+<td style="text-align:right;">
+0.7584113
+</td>
+<td style="text-align:right;">
+0.0119661
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Neurocalcin-delta A (ncalda)
+</td>
+<td style="text-align:right;">
+1.1556537
+</td>
+<td style="text-align:right;">
+0.0123394
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Nck-associated protein 1 (nckap1)
+</td>
+<td style="text-align:right;">
+0.7179186
+</td>
+<td style="text-align:right;">
+0.0129776
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Cytochrome c oxidase subunit 2 (mt-co2)
+</td>
+<td style="text-align:right;">
+-0.7619775
+</td>
+<td style="text-align:right;">
+0.0138354
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Sideroflexin-4 (sfxn4)
+</td>
+<td style="text-align:right;">
+0.7152910
+</td>
+<td style="text-align:right;">
+0.0139149
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Histone-binding protein RBBP4 (rbbp4)
+</td>
+<td style="text-align:right;">
+-0.8698140
+</td>
+<td style="text-align:right;">
+0.0144602
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Actin-related protein 2-A (actr2a)
+</td>
+<td style="text-align:right;">
+-1.2894124
+</td>
+<td style="text-align:right;">
+0.0146707
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+V-type proton ATPase subunit d 1 (atp6v0d1)
+</td>
+<td style="text-align:right;">
+-0.6225767
+</td>
+<td style="text-align:right;">
+0.0147760
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Serrate RNA effector molecule homolog (srrt)
+</td>
+<td style="text-align:right;">
+-0.8174883
+</td>
+<td style="text-align:right;">
+0.0154373
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Anamorsin (ciapin1)
+</td>
+<td style="text-align:right;">
+-0.9001998
+</td>
+<td style="text-align:right;">
+0.0156356
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+L-lactate dehydrogenase B-A chain (ldhba)
+</td>
+<td style="text-align:right;">
+-0.5153661
+</td>
+<td style="text-align:right;">
+0.0162968
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+tRNA-splicing ligase RtcB homolog (rtcb)
+</td>
+<td style="text-align:right;">
+0.8957203
+</td>
+<td style="text-align:right;">
+0.0167997
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Neuropilin-1a (nrp1a)
+</td>
+<td style="text-align:right;">
+0.9657941
+</td>
+<td style="text-align:right;">
+0.0171086
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Protein phosphatase 1 regulatory subunit 12A (ppp1r12a)
+</td>
+<td style="text-align:right;">
+-0.7701770
+</td>
+<td style="text-align:right;">
+0.0171592
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RNA binding protein fox-1 homolog 1 (rbfox1)
+</td>
+<td style="text-align:right;">
+-1.1904907
+</td>
+<td style="text-align:right;">
+0.0180180
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lissencephaly-1 homolog A (pafah1b1a)
+</td>
+<td style="text-align:right;">
+0.5846215
+</td>
+<td style="text-align:right;">
+0.0200546
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+COP9 signalosome complex subunit 3 (cops3)
+</td>
+<td style="text-align:right;">
+-0.5757406
+</td>
+<td style="text-align:right;">
+0.0202137
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SLIT-ROBO Rho GTPase-activating protein 2 (srgap2)
+</td>
+<td style="text-align:right;">
+0.8907259
+</td>
+<td style="text-align:right;">
+0.0207179
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+PI-PLC X domain-containing protein 3 (plcxd3)
+</td>
+<td style="text-align:right;">
+0.9590319
+</td>
+<td style="text-align:right;">
+0.0210558
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Phenylalanine–tRNA ligase alpha subunit (farsa)
+</td>
+<td style="text-align:right;">
+-0.7923081
+</td>
+<td style="text-align:right;">
+0.0217086
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Guanine nucleotide-binding protein subunit beta-2-like 1 (gnb2l1)
+</td>
+<td style="text-align:right;">
+-0.6517242
+</td>
+<td style="text-align:right;">
+0.0221628
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RNA-binding motif protein, X chromosome (rbmx)
+</td>
+<td style="text-align:right;">
+0.7145715
+</td>
+<td style="text-align:right;">
+0.0229699
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Citrate synthase, mitochondrial (cs)
+</td>
+<td style="text-align:right;">
+0.7188493
+</td>
+<td style="text-align:right;">
+0.0244227
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Eukaryotic translation initiation factor 3 subunit M (eif3m)
+</td>
+<td style="text-align:right;">
+0.9212302
+</td>
+<td style="text-align:right;">
+0.0254593
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+KH domain-containing, RNA-binding, signal transduction-associated protein 2 (khdrbs2)
+</td>
+<td style="text-align:right;">
+0.8185816
+</td>
+<td style="text-align:right;">
+0.0256795
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Dynamin-1-like protein (dnm1l)
+</td>
+<td style="text-align:right;">
+0.6389097
+</td>
+<td style="text-align:right;">
+0.0261175
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SUMO-activating enzyme subunit 2 (uba2)
+</td>
+<td style="text-align:right;">
+-0.6079133
+</td>
+<td style="text-align:right;">
+0.0278778
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Neuronal-specific septin-3 (sept3)
+</td>
+<td style="text-align:right;">
+-0.4635944
+</td>
+<td style="text-align:right;">
+0.0339316
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+WD repeat-containing protein 26 (wdr26)
+</td>
+<td style="text-align:right;">
+0.6997694
+</td>
+<td style="text-align:right;">
+0.0381506
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Poly(U)-binding-splicing factor PUF60-B (puf60b)
+</td>
+<td style="text-align:right;">
+-0.6784616
+</td>
+<td style="text-align:right;">
+0.0398110
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+CUGBP Elav-like family member 2 (celf2)
+</td>
+<td style="text-align:right;">
+-0.6715693
+</td>
+<td style="text-align:right;">
+0.0448846
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+mRNA cap guanine-N7 methyltransferase (rnmt)
+</td>
+<td style="text-align:right;">
+1.1589180
+</td>
+<td style="text-align:right;">
+0.0486245
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div id="heatmap-summary-1" class="section level2">
+<h2><span class="header-section-number">2.6</span> Heatmap Summary</h2>
+<p>The following code was used to produce the heatmaps in <strong>Figure 3</strong> showing the logFC of differentially abundant proteins between <em>psen1</em><sup>K97fs/+</sup> and <em>psen1</em><sup>+/+</sup> zebrafish at 6 months and at 24 months of age, along with the logFC of the other comparisons.</p>
+<p>The gene symbols are shown on these heatmaps (instead of the protein names) for display and readability purposes.</p>
+<p>Note that the code to produce the heatmap is not evaluated for this Markdown document as the figure is too wide to fit on the screen.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># View the proteins which are differentially expressed between 6-month-old mutants and wild types. </span>
+
+heatmap_6mth &lt;-<span class="st"> </span>DA_proteins<span class="op">$</span>K97_mutYoung_wtYoung <span class="op">%&gt;%</span>
+<span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(firstGene, <span class="kw">starts_with</span>(<span class="st">&quot;Coef&quot;</span>)) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span>as.data.frame <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">arrange</span>(<span class="kw">desc</span>(Coef.K97_mutYoung_wtYoung), <span class="kw">desc</span>(Coef.K97_wtOld_wtYoung)) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">column_to_rownames</span>(<span class="st">&quot;firstGene&quot;</span>) <span class="op">%&gt;%</span>
+<span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;Coef.K97_mutYoung_wtYoung&quot;</span>, <span class="st">&quot;Coef.K97_wtOld_wtYoung&quot;</span>, <span class="st">&quot;Coef.K97_mutOld_wtOld&quot;</span>, <span class="st">&quot;Coef.K97_mutOld_mutYoung&quot;</span>)
+
+<span class="co"># To prevent very large or small logFC from standing out too much in the heatmap,</span>
+<span class="co"># set the maximum and minimum logFC for visualisation purposes.</span>
+heatmap_6mth[(heatmap_6mth)<span class="op">&gt;</span><span class="dv">3</span>] &lt;-<span class="st"> </span><span class="dv">3</span>
+heatmap_6mth[(heatmap_6mth)<span class="op">&lt;</span>(<span class="op">-</span><span class="dv">3</span>)] &lt;-<span class="st"> </span>(<span class="op">-</span><span class="dv">3</span>)
+
+<span class="co"># Create the heatmap for DE genes at 6 months</span>
+h6 &lt;-<span class="st"> </span>heatmap_6mth<span class="op">%&gt;%</span>
+<span class="st">  </span>t <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">pheatmap</span>(
+    <span class="dt">scale=</span><span class="st">&quot;none&quot;</span>,
+    <span class="dt">cluster_rows =</span> <span class="ot">FALSE</span>,
+    <span class="dt">clustering_method =</span> <span class="st">&quot;complete&quot;</span>,
+    <span class="dt">clustering_distance_cols =</span> <span class="st">&quot;binary&quot;</span>,
+    <span class="dt">border_color =</span> <span class="st">&quot;white&quot;</span>, 
+    <span class="dt">treeheight_col =</span> <span class="dv">60</span>, 
+    <span class="dt">treeheight_row =</span> <span class="dv">0</span>,
+    <span class="dt">fontsize =</span> <span class="dv">6</span>, 
+    <span class="dt">cellheight =</span> <span class="dv">10</span>, <span class="dt">cellwidth =</span> <span class="dv">10</span>,
+        <span class="dt">color =</span> <span class="kw">colorRampPalette</span>(<span class="kw">c</span>(<span class="st">&quot;#10c1e5&quot;</span>, <span class="st">&quot;#82e0b4&quot;</span>,<span class="st">&quot;#F9F9F9&quot;</span>, <span class="st">&quot;#FBB829&quot;</span>, <span class="st">&quot;#FF0066&quot;</span>))(<span class="dv">100</span>))
+
+
+<span class="co"># ---------------------------------------------------------------------------------#</span>
+
+<span class="co"># Do the same with the 24 month mutant vs. wild type DA proteins</span>
+
+heatmap_24mth &lt;-<span class="st"> </span>DA_proteins<span class="op">$</span>K97_mutOld_wtOld <span class="op">%&gt;%</span>
+<span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(firstGene, <span class="kw">starts_with</span>(<span class="st">&quot;Coef&quot;</span>)) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span>as.data.frame <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">arrange</span>(<span class="kw">desc</span>(Coef.K97_mutOld_wtOld)) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">column_to_rownames</span>(<span class="st">&quot;firstGene&quot;</span>) <span class="op">%&gt;%</span>
+<span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;Coef.K97_mutOld_wtOld&quot;</span>, <span class="st">&quot;Coef.K97_wtOld_wtYoung&quot;</span>, <span class="st">&quot;Coef.K97_mutYoung_wtYoung&quot;</span>, <span class="st">&quot;Coef.K97_mutOld_mutYoung&quot;</span>)
+
+<span class="co"># To prevent very large or small logFC from standing out too much in the heatmap,</span>
+<span class="co"># set the maximum and minimum logFC for visualisation purposes.</span>
+heatmap_24mth[(heatmap_24mth)<span class="op">&gt;</span><span class="dv">3</span>] &lt;-<span class="st"> </span><span class="dv">3</span>
+heatmap_24mth[(heatmap_24mth)<span class="op">&lt;</span>(<span class="op">-</span><span class="dv">3</span>)] &lt;-<span class="st"> </span>(<span class="op">-</span><span class="dv">3</span>)
+
+<span class="co"># Create the heatmap for DE genes at 6 months</span>
+h24 &lt;-<span class="st"> </span>heatmap_24mth<span class="op">%&gt;%</span>
+<span class="st">  </span>t <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">pheatmap</span>(
+    <span class="dt">scale=</span><span class="st">&quot;none&quot;</span>,
+    <span class="dt">cluster_rows =</span> <span class="ot">FALSE</span>,
+    <span class="dt">clustering_method =</span> <span class="st">&quot;complete&quot;</span>,
+    <span class="dt">clustering_distance_cols =</span> <span class="st">&quot;binary&quot;</span>,
+    <span class="dt">border_color =</span> <span class="st">&quot;white&quot;</span>, 
+    <span class="dt">treeheight_col =</span> <span class="dv">60</span>, 
+    <span class="dt">treeheight_row =</span> <span class="dv">0</span>,
+    <span class="dt">fontsize =</span> <span class="dv">6</span>, 
+    <span class="dt">cellheight =</span> <span class="dv">10</span>, <span class="dt">cellwidth =</span> <span class="dv">10</span>,
+        <span class="dt">color =</span> <span class="kw">colorRampPalette</span>(<span class="kw">c</span>(<span class="st">&quot;#10c1e5&quot;</span>, <span class="st">&quot;#82e0b4&quot;</span>,<span class="st">&quot;#F9F9F9&quot;</span>, <span class="st">&quot;#FBB829&quot;</span>, <span class="st">&quot;#FF0066&quot;</span>))(<span class="dv">100</span>))</code></pre></div>
+</div>
+<div id="enrichment-analysis" class="section level2">
+<h2><span class="header-section-number">2.7</span> Enrichment Analysis</h2>
+<p>We will use <em>limma</em>’s functions <code>goana</code> and <code>kegga</code> to perform enrichment analysis using Gene Ontology terms and KEGG pathways respectively.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Over-representation of Gene Ontology Terms</span>
+<span class="co"># Test for each contrast (comparison).</span>
+
+goana_proteins &lt;-<span class="st"> </span><span class="kw">list</span>()
+
+goana_proteins[[<span class="st">&quot;mutYoung_wtYoung&quot;</span>]] &lt;-<span class="st"> </span><span class="kw">goana</span>(DA_proteins<span class="op">$</span>K97_mutYoung_wtYoung<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">universe =</span> proteinList_biorep<span class="op">$</span>K97_mutYoung_wtYoung<span class="op">$</span>all<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">species =</span> <span class="st">&quot;Dr&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">FDR =</span> <span class="kw">p.adjust</span>(P.DE, <span class="st">&quot;fdr&quot;</span>))
+
+
+goana_proteins[[<span class="st">&quot;mutOld_wtOld&quot;</span>]] &lt;-<span class="st"> </span><span class="kw">goana</span>(DA_proteins<span class="op">$</span>K97_mutOld_wtOld<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">universe =</span> proteinList_biorep<span class="op">$</span>K97_mutOld_wtOld<span class="op">$</span>all<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">species =</span> <span class="st">&quot;Dr&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">FDR =</span> <span class="kw">p.adjust</span>(P.DE, <span class="st">&quot;fdr&quot;</span>))
+
+goana_proteins[[<span class="st">&quot;wtOld_wtYoung&quot;</span>]] &lt;-<span class="st"> </span><span class="kw">goana</span>(DA_proteins<span class="op">$</span>K97_wtOld_wtYoung<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">universe =</span> proteinList_biorep<span class="op">$</span>K97_wtOld_wtYoung<span class="op">$</span>all<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">species =</span> <span class="st">&quot;Dr&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">FDR =</span> <span class="kw">p.adjust</span>(P.DE, <span class="st">&quot;fdr&quot;</span>))
+
+goana_proteins[[<span class="st">&quot;mutOld_mutYoung&quot;</span>]] &lt;-<span class="st"> </span><span class="kw">goana</span>(DA_proteins<span class="op">$</span>K97_mutOld_mutYoung<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">universe =</span> proteinList_biorep<span class="op">$</span>K97_mutOld_mutYoung<span class="op">$</span>all<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">species =</span> <span class="st">&quot;Dr&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">FDR =</span> <span class="kw">p.adjust</span>(P.DE, <span class="st">&quot;fdr&quot;</span>))
+
+top_goana_proteins &lt;-<span class="st"> </span><span class="kw">lapply</span>(goana_proteins, limma<span class="op">::</span>topGO)
+
+<span class="co"># Preview the top enriched GO terms for the comparisons of mutant vs. wildtype in </span>
+<span class="co"># young (6 month old) and old (24 month old) zebrafish. </span>
+top_goana_proteins<span class="op">$</span>mutYoung_wtYoung <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">kable</span>()</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="left">Term</th>
+<th align="left">Ont</th>
+<th align="right">N</th>
+<th align="right">DE</th>
+<th align="right">P.DE</th>
+<th align="right">FDR</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="GO:0060548" class="uri">GO:0060548</a></td>
+<td align="left">negative regulation of cell death</td>
+<td align="left">BP</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0003828</td>
+<td align="right">0.1875029</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0009123" class="uri">GO:0009123</a></td>
+<td align="left">nucleoside monophosphate metabolic process</td>
+<td align="left">BP</td>
+<td align="right">17</td>
+<td align="right">6</td>
+<td align="right">0.0006794</td>
+<td align="right">0.1875029</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0006753" class="uri">GO:0006753</a></td>
+<td align="left">nucleoside phosphate metabolic process</td>
+<td align="left">BP</td>
+<td align="right">17</td>
+<td align="right">6</td>
+<td align="right">0.0006794</td>
+<td align="right">0.1875029</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0009117" class="uri">GO:0009117</a></td>
+<td align="left">nucleotide metabolic process</td>
+<td align="left">BP</td>
+<td align="right">17</td>
+<td align="right">6</td>
+<td align="right">0.0006794</td>
+<td align="right">0.1875029</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0009126" class="uri">GO:0009126</a></td>
+<td align="left">purine nucleoside monophosphate metabolic process</td>
+<td align="left">BP</td>
+<td align="right">17</td>
+<td align="right">6</td>
+<td align="right">0.0006794</td>
+<td align="right">0.1875029</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0006163" class="uri">GO:0006163</a></td>
+<td align="left">purine nucleotide metabolic process</td>
+<td align="left">BP</td>
+<td align="right">17</td>
+<td align="right">6</td>
+<td align="right">0.0006794</td>
+<td align="right">0.1875029</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0009167" class="uri">GO:0009167</a></td>
+<td align="left">purine ribonucleoside monophosphate metabolic process</td>
+<td align="left">BP</td>
+<td align="right">17</td>
+<td align="right">6</td>
+<td align="right">0.0006794</td>
+<td align="right">0.1875029</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0009150" class="uri">GO:0009150</a></td>
+<td align="left">purine ribonucleotide metabolic process</td>
+<td align="left">BP</td>
+<td align="right">17</td>
+<td align="right">6</td>
+<td align="right">0.0006794</td>
+<td align="right">0.1875029</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0009161" class="uri">GO:0009161</a></td>
+<td align="left">ribonucleoside monophosphate metabolic process</td>
+<td align="left">BP</td>
+<td align="right">17</td>
+<td align="right">6</td>
+<td align="right">0.0006794</td>
+<td align="right">0.1875029</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0009259" class="uri">GO:0009259</a></td>
+<td align="left">ribonucleotide metabolic process</td>
+<td align="left">BP</td>
+<td align="right">17</td>
+<td align="right">6</td>
+<td align="right">0.0006794</td>
+<td align="right">0.1875029</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0019693" class="uri">GO:0019693</a></td>
+<td align="left">ribose phosphate metabolic process</td>
+<td align="left">BP</td>
+<td align="right">17</td>
+<td align="right">6</td>
+<td align="right">0.0006794</td>
+<td align="right">0.1875029</td>
+</tr>
+<tr class="even">
+<td><a href="GO:1901135" class="uri">GO:1901135</a></td>
+<td align="left">carbohydrate derivative metabolic process</td>
+<td align="left">BP</td>
+<td align="right">25</td>
+<td align="right">7</td>
+<td align="right">0.0010770</td>
+<td align="right">0.2724788</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0055086" class="uri">GO:0055086</a></td>
+<td align="left">nucleobase-containing small molecule metabolic process</td>
+<td align="left">BP</td>
+<td align="right">19</td>
+<td align="right">6</td>
+<td align="right">0.0013459</td>
+<td align="right">0.2918725</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0072521" class="uri">GO:0072521</a></td>
+<td align="left">purine-containing compound metabolic process</td>
+<td align="left">BP</td>
+<td align="right">19</td>
+<td align="right">6</td>
+<td align="right">0.0013459</td>
+<td align="right">0.2918725</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0019637" class="uri">GO:0019637</a></td>
+<td align="left">organophosphate metabolic process</td>
+<td align="left">BP</td>
+<td align="right">21</td>
+<td align="right">6</td>
+<td align="right">0.0024317</td>
+<td align="right">0.4352102</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0046034" class="uri">GO:0046034</a></td>
+<td align="left">ATP metabolic process</td>
+<td align="left">BP</td>
+<td align="right">15</td>
+<td align="right">5</td>
+<td align="right">0.0028670</td>
+<td align="right">0.4352102</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0009141" class="uri">GO:0009141</a></td>
+<td align="left">nucleoside triphosphate metabolic process</td>
+<td align="left">BP</td>
+<td align="right">15</td>
+<td align="right">5</td>
+<td align="right">0.0028670</td>
+<td align="right">0.4352102</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0009144" class="uri">GO:0009144</a></td>
+<td align="left">purine nucleoside triphosphate metabolic process</td>
+<td align="left">BP</td>
+<td align="right">15</td>
+<td align="right">5</td>
+<td align="right">0.0028670</td>
+<td align="right">0.4352102</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0009205" class="uri">GO:0009205</a></td>
+<td align="left">purine ribonucleoside triphosphate metabolic process</td>
+<td align="left">BP</td>
+<td align="right">15</td>
+<td align="right">5</td>
+<td align="right">0.0028670</td>
+<td align="right">0.4352102</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0009199" class="uri">GO:0009199</a></td>
+<td align="left">ribonucleoside triphosphate metabolic process</td>
+<td align="left">BP</td>
+<td align="right">15</td>
+<td align="right">5</td>
+<td align="right">0.0028670</td>
+<td align="right">0.4352102</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">top_goana_proteins<span class="op">$</span>mutOld_wtOld <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">kable</span>()</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="left">Term</th>
+<th align="left">Ont</th>
+<th align="right">N</th>
+<th align="right">DE</th>
+<th align="right">P.DE</th>
+<th align="right">FDR</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="GO:0022853" class="uri">GO:0022853</a></td>
+<td align="left">active ion transmembrane transporter activity</td>
+<td align="left">MF</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0099132" class="uri">GO:0099132</a></td>
+<td align="left">ATP hydrolysis coupled cation transmembrane transport</td>
+<td align="left">BP</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0099131" class="uri">GO:0099131</a></td>
+<td align="left">ATP hydrolysis coupled ion transmembrane transport</td>
+<td align="left">BP</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0015991" class="uri">GO:0015991</a></td>
+<td align="left">ATP hydrolysis coupled proton transport</td>
+<td align="left">BP</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0090662" class="uri">GO:0090662</a></td>
+<td align="left">ATP hydrolysis coupled transmembrane transport</td>
+<td align="left">BP</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0043492" class="uri">GO:0043492</a></td>
+<td align="left">ATPase activity, coupled to movement of substances</td>
+<td align="left">MF</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0015662" class="uri">GO:0015662</a></td>
+<td align="left">ATPase activity, coupled to transmembrane movement of ions, phosphorylative mechanism</td>
+<td align="left">MF</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0044769" class="uri">GO:0044769</a></td>
+<td align="left">ATPase activity, coupled to transmembrane movement of ions, rotational mechanism</td>
+<td align="left">MF</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0042626" class="uri">GO:0042626</a></td>
+<td align="left">ATPase activity, coupled to transmembrane movement of substances</td>
+<td align="left">MF</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0042625" class="uri">GO:0042625</a></td>
+<td align="left">ATPase coupled ion transmembrane transporter activity</td>
+<td align="left">MF</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0019829" class="uri">GO:0019829</a></td>
+<td align="left">cation-transporting ATPase activity</td>
+<td align="left">MF</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0015988" class="uri">GO:0015988</a></td>
+<td align="left">energy coupled proton transmembrane transport, against electrochemical gradient</td>
+<td align="left">BP</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0036442" class="uri">GO:0036442</a></td>
+<td align="left">hydrogen-exporting ATPase activity</td>
+<td align="left">MF</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0008553" class="uri">GO:0008553</a></td>
+<td align="left">hydrogen-exporting ATPase activity, phosphorylative mechanism</td>
+<td align="left">MF</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0016820" class="uri">GO:0016820</a></td>
+<td align="left">hydrolase activity, acting on acid anhydrides, catalyzing transmembrane movement of substances</td>
+<td align="left">MF</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0015405" class="uri">GO:0015405</a></td>
+<td align="left">P-P-bond-hydrolysis-driven transmembrane transporter activity</td>
+<td align="left">MF</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0015399" class="uri">GO:0015399</a></td>
+<td align="left">primary active transmembrane transporter activity</td>
+<td align="left">MF</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0046961" class="uri">GO:0046961</a></td>
+<td align="left">proton-transporting ATPase activity, rotational mechanism</td>
+<td align="left">MF</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td><a href="GO:0033176" class="uri">GO:0033176</a></td>
+<td align="left">proton-transporting V-type ATPase complex</td>
+<td align="left">CC</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td><a href="GO:0016471" class="uri">GO:0016471</a></td>
+<td align="left">vacuolar proton-transporting V-type ATPase complex</td>
+<td align="left">CC</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0.0094012</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co">#-----------------------------------------------------------------------------------------------------------------------#</span>
+<span class="co"># Over-represemtation analysis of KEGG Pathways</span>
+<span class="co"># for each contrast (comparison)</span>
+
+kegga_proteins &lt;-<span class="st"> </span><span class="kw">list</span>()
+
+kegga_proteins[[<span class="st">&quot;mutYoung_wtYoung&quot;</span>]] &lt;-<span class="st"> </span><span class="kw">kegga</span>(DA_proteins<span class="op">$</span>K97_mutYoung_wtYoung<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">universe =</span> proteinList_biorep<span class="op">$</span>K97_mutYoung_wtYoung<span class="op">$</span>all<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">species =</span> <span class="st">&quot;Dr&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">FDR =</span> <span class="kw">p.adjust</span>(P.DE, <span class="st">&quot;fdr&quot;</span>))
+
+
+kegga_proteins[[<span class="st">&quot;mutOld_wtOld&quot;</span>]] &lt;-<span class="st"> </span><span class="kw">kegga</span>(DA_proteins<span class="op">$</span>K97_mutOld_wtOld<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">universe =</span> proteinList_biorep<span class="op">$</span>K97_mutOld_wtOld<span class="op">$</span>all<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">species =</span> <span class="st">&quot;Dr&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">FDR =</span> <span class="kw">p.adjust</span>(P.DE, <span class="st">&quot;fdr&quot;</span>))
+
+kegga_proteins[[<span class="st">&quot;wtOld_wtYoung&quot;</span>]] &lt;-<span class="st"> </span><span class="kw">kegga</span>(DA_proteins<span class="op">$</span>K97_wtOld_wtYoung<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">universe =</span> proteinList_biorep<span class="op">$</span>K97_wtOld_wtYoung<span class="op">$</span>all<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">species =</span> <span class="st">&quot;Dr&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">FDR =</span> <span class="kw">p.adjust</span>(P.DE, <span class="st">&quot;fdr&quot;</span>))
+
+kegga_proteins[[<span class="st">&quot;mutOld_mutYoung&quot;</span>]] &lt;-<span class="st"> </span><span class="kw">kegga</span>(DA_proteins<span class="op">$</span>K97_mutOld_mutYoung<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">universe =</span> proteinList_biorep<span class="op">$</span>K97_mutOld_mutYoung<span class="op">$</span>all<span class="op">$</span>ENTREZ_GENE,
+                                              <span class="dt">species =</span> <span class="st">&quot;Dr&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">FDR =</span> <span class="kw">p.adjust</span>(P.DE, <span class="st">&quot;fdr&quot;</span>))
+
+top_kegga_proteins &lt;-<span class="st"> </span><span class="kw">lapply</span>(kegga_proteins, topKEGG)
+
+<span class="co"># Preview the top enriched KEGG pathways for the comparisons of mutant vs. wildtype in </span>
+<span class="co"># young (6 month old) and old (24 month old) zebrafish. </span>
+top_kegga_proteins<span class="op">$</span>mutYoung_wtYoung <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">kable</span>()</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="left">Pathway</th>
+<th align="right">N</th>
+<th align="right">DE</th>
+<th align="right">P.DE</th>
+<th align="right">FDR</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>path:dre00190</td>
+<td align="left">Oxidative phosphorylation</td>
+<td align="right">13</td>
+<td align="right">3</td>
+<td align="right">0.0415898</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre04512</td>
+<td align="left">ECM-receptor interaction</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">0.0657895</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre04146</td>
+<td align="left">Peroxisome</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">0.0657895</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre04260</td>
+<td align="left">Cardiac muscle contraction</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">0.1276577</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre00230</td>
+<td align="left">Purine metabolism</td>
+<td align="right">3</td>
+<td align="right">1</td>
+<td align="right">0.1858139</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre01100</td>
+<td align="left">Metabolic pathways</td>
+<td align="right">51</td>
+<td align="right">5</td>
+<td align="right">0.2106555</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre00250</td>
+<td align="left">Alanine, aspartate and glutamate metabolism</td>
+<td align="right">4</td>
+<td align="right">1</td>
+<td align="right">0.2404572</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre00051</td>
+<td align="left">Fructose and mannose metabolism</td>
+<td align="right">4</td>
+<td align="right">1</td>
+<td align="right">0.2404572</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre04621</td>
+<td align="left">NOD-like receptor signaling pathway</td>
+<td align="right">4</td>
+<td align="right">1</td>
+<td align="right">0.2404572</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre04120</td>
+<td align="left">Ubiquitin mediated proteolysis</td>
+<td align="right">4</td>
+<td align="right">1</td>
+<td align="right">0.2404572</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre04218</td>
+<td align="left">Cellular senescence</td>
+<td align="right">5</td>
+<td align="right">1</td>
+<td align="right">0.2917777</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre04510</td>
+<td align="left">Focal adhesion</td>
+<td align="right">5</td>
+<td align="right">1</td>
+<td align="right">0.2917777</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre00562</td>
+<td align="left">Inositol phosphate metabolism</td>
+<td align="right">5</td>
+<td align="right">1</td>
+<td align="right">0.2917777</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre04020</td>
+<td align="left">Calcium signaling pathway</td>
+<td align="right">6</td>
+<td align="right">1</td>
+<td align="right">0.3399561</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre01230</td>
+<td align="left">Biosynthesis of amino acids</td>
+<td align="right">7</td>
+<td align="right">1</td>
+<td align="right">0.3851646</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre04141</td>
+<td align="left">Protein processing in endoplasmic reticulum</td>
+<td align="right">8</td>
+<td align="right">1</td>
+<td align="right">0.4275670</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre00010</td>
+<td align="left">Glycolysis / Gluconeogenesis</td>
+<td align="right">11</td>
+<td align="right">1</td>
+<td align="right">0.5394592</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre01200</td>
+<td align="left">Carbon metabolism</td>
+<td align="right">13</td>
+<td align="right">1</td>
+<td align="right">0.6026844</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre03013</td>
+<td align="left">RNA transport</td>
+<td align="right">13</td>
+<td align="right">1</td>
+<td align="right">0.6026844</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre00520</td>
+<td align="left">Amino sugar and nucleotide sugar metabolism</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">1.0000000</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">top_kegga_proteins<span class="op">$</span>mutOld_wtOld <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">kable</span>()</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="left">Pathway</th>
+<th align="right">N</th>
+<th align="right">DE</th>
+<th align="right">P.DE</th>
+<th align="right">FDR</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>path:dre00190</td>
+<td align="left">Oxidative phosphorylation</td>
+<td align="right">13</td>
+<td align="right">5</td>
+<td align="right">0.0964483</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre04145</td>
+<td align="left">Phagosome</td>
+<td align="right">6</td>
+<td align="right">3</td>
+<td align="right">0.0996229</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre04150</td>
+<td align="left">mTOR signaling pathway</td>
+<td align="right">4</td>
+<td align="right">2</td>
+<td align="right">0.1848625</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre04142</td>
+<td align="left">Lysosome</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">0.2039474</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre00910</td>
+<td align="left">Nitrogen metabolism</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">0.2039474</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre00640</td>
+<td align="left">Propanoate metabolism</td>
+<td align="right">5</td>
+<td align="right">2</td>
+<td align="right">0.2695261</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre04810</td>
+<td align="left">Regulation of actin cytoskeleton</td>
+<td align="right">5</td>
+<td align="right">2</td>
+<td align="right">0.2695261</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre04530</td>
+<td align="left">Tight junction</td>
+<td align="right">5</td>
+<td align="right">2</td>
+<td align="right">0.2695261</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre01100</td>
+<td align="left">Metabolic pathways</td>
+<td align="right">51</td>
+<td align="right">12</td>
+<td align="right">0.3160966</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre01210</td>
+<td align="left">2-Oxocarboxylic acid metabolism</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">0.3673754</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre00970</td>
+<td align="left">Aminoacyl-tRNA biosynthesis</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">0.3673754</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre04371</td>
+<td align="left">Apelin signaling pathway</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">0.3673754</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre00590</td>
+<td align="left">Arachidonic acid metabolism</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">0.3673754</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre00410</td>
+<td align="left">beta-Alanine metabolism</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">0.3673754</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre04260</td>
+<td align="left">Cardiac muscle contraction</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">0.3673754</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre00260</td>
+<td align="left">Glycine, serine and threonine metabolism</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">0.3673754</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre00630</td>
+<td align="left">Glyoxylate and dicarboxylate metabolism</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">0.3673754</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre04340</td>
+<td align="left">Hedgehog signaling pathway</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">0.3673754</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>path:dre04744</td>
+<td align="left">Phototransduction</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">0.3673754</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>path:dre03320</td>
+<td align="left">PPAR signaling pathway</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">0.3673754</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="session-info-1" class="section level2">
+<h2><span class="header-section-number">2.8</span> Session Info</h2>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sessionInfo</span>()</code></pre></div>
+<pre><code>## R version 3.4.1 (2017-06-30)
+## Platform: x86_64-apple-darwin15.6.0 (64-bit)
+## Running under: macOS Sierra 10.12.6
+## 
+## Matrix products: default
+## BLAS: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRblas.0.dylib
+## LAPACK: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRlapack.dylib
+## 
+## locale:
+## [1] en_AU.UTF-8/en_AU.UTF-8/en_AU.UTF-8/C/en_AU.UTF-8/en_AU.UTF-8
+## 
+## attached base packages:
+##  [1] grid      stats4    parallel  stats     graphics  grDevices utils    
+##  [8] datasets  methods   base     
+## 
+## other attached packages:
+##  [1] corrplot_0.77              qvalue_2.8.0              
+##  [3] MSstats_3.8.2              genefilter_1.58.1         
+##  [5] plyr_1.8.4                 bindrcpp_0.2              
+##  [7] pheatmap_1.0.8             kableExtra_0.5.2          
+##  [9] knitr_1.17                 scales_0.5.0              
+## [11] RColorBrewer_1.1-2         ggplot2_2.2.1             
+## [13] UniProt.ws_2.16.0          RCurl_1.95-4.8            
+## [15] bitops_1.0-6               RSQLite_2.0               
+## [17] biomaRt_2.32.1             RUVSeq_1.10.0             
+## [19] EDASeq_2.10.0              ShortRead_1.34.1          
+## [21] GenomicAlignments_1.12.2   SummarizedExperiment_1.6.4
+## [23] DelayedArray_0.2.7         matrixStats_0.52.2        
+## [25] Rsamtools_1.28.0           GenomicRanges_1.28.5      
+## [27] GenomeInfoDb_1.12.2        Biostrings_2.44.2         
+## [29] XVector_0.16.0             IRanges_2.10.3            
+## [31] S4Vectors_0.14.4           BiocParallel_1.10.1       
+## [33] Biobase_2.36.2             BiocGenerics_0.22.0       
+## [35] edgeR_3.18.1               limma_3.32.6              
+## [37] reshape2_1.4.2             magrittr_1.5              
+## [39] tibble_1.3.4               readr_1.1.1               
+## [41] dplyr_0.7.3               
+## 
+## loaded via a namespace (and not attached):
+##  [1] minqa_1.2.4             colorspace_1.3-2       
+##  [3] hwriter_1.3.2           ggbiplot_0.55          
+##  [5] rprojroot_1.2           rstudioapi_0.7         
+##  [7] mzR_2.10.0              affyio_1.46.0          
+##  [9] ggrepel_0.6.5           bit64_0.9-7            
+## [11] AnnotationDbi_1.38.2    org.Dr.eg.db_3.4.1     
+## [13] xml2_1.1.1              codetools_0.2-15       
+## [15] splines_3.4.1           R.methodsS3_1.7.1      
+## [17] doParallel_1.0.10       impute_1.50.1          
+## [19] DESeq_1.28.0            geneplotter_1.54.0     
+## [21] nloptr_1.0.4            annotate_1.54.0        
+## [23] GO.db_3.4.1             vsn_3.44.0             
+## [25] R.oo_1.21.0             compiler_3.4.1         
+## [27] httr_1.3.1              backports_1.1.0        
+## [29] assertthat_0.2.0        Matrix_1.2-11          
+## [31] lazyeval_0.2.0          htmltools_0.3.6        
+## [33] tools_3.4.1             gtable_0.2.0           
+## [35] glue_1.1.1              GenomeInfoDbData_0.99.0
+## [37] affy_1.54.0             Rcpp_0.12.12           
+## [39] MALDIquant_1.16.4       gdata_2.18.0           
+## [41] preprocessCore_1.38.1   nlme_3.1-131           
+## [43] rtracklayer_1.36.4      iterators_1.0.8        
+## [45] stringr_1.2.0           lme4_1.1-13            
+## [47] rvest_0.3.2             gtools_3.5.0           
+## [49] statmod_1.4.30          XML_3.98-1.9           
+## [51] zlibbioc_1.22.0         MASS_7.3-47            
+## [53] aroma.light_3.6.0       MSnbase_2.2.0          
+## [55] BiocInstaller_1.26.1    pcaMethods_1.68.0      
+## [57] hms_0.3                 ProtGenerics_1.8.0     
+## [59] yaml_2.1.14             memoise_1.1.0          
+## [61] latticeExtra_0.6-28     stringi_1.1.5          
+## [63] highr_0.6               foreach_1.4.3          
+## [65] caTools_1.17.1          GenomicFeatures_1.28.4 
+## [67] rlang_0.1.2.9000        pkgconfig_2.0.1        
+## [69] mzID_1.14.0             evaluate_0.10.1        
+## [71] lattice_0.20-35         bindr_0.1              
+## [73] labeling_0.3            bit_1.1-12             
+## [75] bookdown_0.5            R6_2.2.2               
+## [77] gplots_3.0.1            DBI_0.7                
+## [79] survival_2.41-3         KernSmooth_2.23-15     
+## [81] rmarkdown_1.6           locfit_1.5-9.1         
+## [83] marray_1.54.0           minpack.lm_1.2-1       
+## [85] blob_1.1.0              digest_0.6.12          
+## [87] xtable_1.8-2            R.utils_2.5.0          
+## [89] munsell_0.4.3</code></pre>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="differential-gene-expression-analysis.html" class="navigation navigation-prev navigation-unique" aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"google": false,
+"weibo": false,
+"instapper": false,
+"vk": false,
+"all": ["facebook", "google", "twitter", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"download": null,
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+</body>
+
+</html>
