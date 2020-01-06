@@ -1,0 +1,1 @@
+cmd = /Users/nhihin/Box/Projects/ZebrafishAnalysis/data/2018-01-16/acceleratedAging.txt zebrafish /Users/nhihin/Box/Projects/ZebrafishAnalysis/data/2018-01-16/acceleratedAging -start -1500 -end 200 -p 4 -bg /Users/nhihin/Box/Projects/ZebrafishAnalysis/data/2017-09-25/backgroundGenes.txt

@@ -1,0 +1,193 @@
+TermID	Term	Enrichment	logP	Genes in Term	Target Genes in Term	Fraction of Targets in Term	Total Target Genes	Total Genes	Entrez Gene IDs	Gene Symbols
+192302	hdac1 (histone deacetylase 1)	1	0	2	0	0	0	173
+561433	plxnb2a (plexin b2a)	1	0	1	0	0	0	173
+1877	E4F1 (E4F transcription factor 1)	1	0	1	0	0	0	173
+399487	ywhaqa (tyrosine 3-monooxygenase/tryptophan 5-monooxygenase activation protein, theta polypeptide a)	1	0	1	0	0	0	173
+553758	usp7 (ubiquitin specific peptidase 7 (herpes virus-associated))	1	0	3	0	0	0	173
+324261	sp5l (Sp5 transcription factor-like)	1	0	2	0	0	0	173
+323765	gdi2 (GDP dissociation inhibitor 2)	1	0	1	0	0	0	173
+393124	uso1 (USO1 vesicle transport factor)	1	0	1	0	0	0	173
+58073	fzd8a (frizzled class receptor 8a)	1	0	1	0	0	0	173
+791595	wnt11 (wingless-type MMTV integration site family, member 11)	1	0	8	0	0	0	173
+723994	crb2a (crumbs family member 2a)	1	0	2	0	0	0	173
+568520	crb2b (crumbs family member 2b)	1	0	2	0	0	0	173
+322221	actn4 (actinin, alpha 4)	1	0	1	0	0	0	173
+550262	h3f3b.1 (H3 histone, family 3B.1)	1	0	1	0	0	0	173
+561158	e4f1 (E4F transcription factor 1)	1	0	2	0	0	0	173
+114467	mafa (v-maf avian musculoaponeurotic fibrosarcoma oncogene homolog a (paralog a))	1	0	1	0	0	0	173
+573376	hspa8 (heat shock protein 8)	1	0	1	0	0	0	173
+553266	arrb1 (arrestin, beta 1)	1	0	1	0	0	0	173
+436915	camk2n2 (calcium/calmodulin-dependent protein kinase II inhibitor 2)	1	0	1	0	0	0	173
+373085	hspa9 (heat shock protein 9)	1	0	1	0	0	0	173
+7421	VDR (vitamin D (1,25- dihydroxyvitamin D3) receptor)	1	0	1	0	0	0	173
+798441	mstnb (myostatin b)	1	0	2	0	0	0	173
+403011	psma5 (proteasome subunit alpha 5)	1	0	1	0	0	0	173
+57259	Tob2 (transducer of ERBB2, 2)	1	0	2	0	0	0	173
+560240	si:ch211-137a8.4 (si:ch211-137a8.4)	1	0	1	0	0	0	173
+560887	mib2 (mindbomb E3 ubiquitin protein ligase 2)	1	0	28	0	0	0	173
+7046	TGFBR1 (transforming growth factor beta receptor 1)	1	0	1	0	0	0	173
+492520	pgrmc1 (progesterone receptor membrane component 1)	1	0	1	0	0	0	173
+30314	apoeb (apolipoprotein Eb)	1	0	1	0	0	0	173
+7336	UBE2V2 (ubiquitin conjugating enzyme E2 V2)	1	0	1	0	0	0	173
+368390	plk4 (polo-like kinase 4 (Drosophila))	1	0	1	0	0	0	173
+5905	RANGAP1 (Ran GTPase activating protein 1)	1	0	1	0	0	0	173
+352910	mib1 (mindbomb E3 ubiquitin protein ligase 1)	1	0	51	0	0	0	173
+324015	ube2d1b (ubiquitin-conjugating enzyme E2D 1b)	1	0	1	0	0	0	173
+560234	nphp4 (nephronophthisis 4)	1	0	1	0	0	0	173
+30587	pax7a (paired box 7a)	1	0	1	0	0	0	173
+564886	si:ch1073-296d18.1 (si:ch1073-296d18.1)	1	0	1	0	0	0	173
+30120	dlc (deltaC)	1	0	2	0	0	0	173
+22057	Tob1 (transducer of ErbB-2.1)	1	0	2	0	0	0	173
+3612	IMPA1 (inositol monophosphatase 1)	1	0	1	0	0	0	173
+692296	yaf2 (YY1 associated factor 2)	1	0	1	0	0	0	173
+402998	plxnd1 (plexin D1)	1	0	1	0	0	0	173
+550134	ubb (ubiquitin B)	1	0	1	0	0	0	173
+30573	hsp90ab1 (heat shock protein 90, alpha (cytosolic), class B member 1)	1	0	1	0	0	0	173
+195823	naca (nascent polypeptide-associated complex alpha subunit)	1	0	1	0	0	0	173
+768303	bbs4 (Bardet-Biedl syndrome 4)	1	0	1	0	0	0	173
+30273	snai1a (snail family zinc finger 1a)	1	0	1	0	0	0	173
+140744	ckbb (creatine kinase, brain b)	1	0	1	0	0	0	173
+321505	bmi1a (bmi1 polycomb ring finger oncogene 1a)	1	0	3	0	0	0	173
+100149029	pdzrn3a (PDZ domain containing RING finger 3a)	1	0	1	0	0	0	173
+852793	MMS2 (E2 ubiquitin-conjugating protein MMS2)	1	0	1	0	0	0	173
+373126	hif1an (hypoxia inducible factor 1, alpha subunit inhibitor)	1	0	2	0	0	0	173
+7335	UBE2V1 (ubiquitin conjugating enzyme E2 V1)	1	0	1	0	0	0	173
+336641	rpl17 (ribosomal protein L17)	1	0	1	0	0	0	173
+386629	tob1a (transducer of ERBB2, 1a)	1	0	4	0	0	0	173
+30718	notch1a (notch 1a)	1	0	3	0	0	0	173
+335881	kidins220b (kinase D-interacting substrate 220b)	1	0	1	0	0	0	173
+328572	Ep300 (E1A binding protein p300)	1	0	2	0	0	0	173
+324554	cpsf3 (cleavage and polyadenylation specific factor 3)	1	0	1	0	0	0	173
+30071	tbx5a (T-box 5a)	1	0	1	0	0	0	173
+114447	cxcr4b (chemokine (C-X-C motif), receptor 4b)	1	0	1	0	0	0	173
+30549	fgf3 (fibroblast growth factor 3)	1	0	1	0	0	0	173
+322397	yy1a (YY1 transcription factor a)	1	0	1	0	0	0	173
+560099	LOC560099 (zinc finger protein 239-like)	1	0	1	0	0	0	173
+324004	ctnnb2 (catenin, beta 2)	1	0	3	0	0	0	173
+25636	Prkaca (protein kinase cAMP-activated catalytic subunit alpha)	1	0	1	0	0	0	173
+17128	Smad4 (SMAD family member 4)	1	0	1	0	0	0	173
+3837	KPNB1 (karyopherin subunit beta 1)	1	0	1	0	0	0	173
+378968	abat (4-aminobutyrate aminotransferase)	1	0	1	0	0	0	173
+30325	hoxa2b (homeobox A2b)	1	0	1	0	0	0	173
+17127	Smad3 (SMAD family member 3)	1	0	1	0	0	0	173
+368449	epb41l5 (erythrocyte membrane protein band 4.1 like 5)	1	0	4	0	0	0	173
+7316	UBC (ubiquitin C)	1	0	2	0	0	0	173
+80972	dvl3a (dishevelled segment polarity protein 3a)	1	0	2	0	0	0	173
+58037	actn3a (actinin alpha 3a)	1	0	1	0	0	0	173
+30138	dld (deltaD)	1	0	2	0	0	0	173
+323269	zbtb16a (zinc finger and BTB domain containing 16a)	1	0	1	0	0	0	173
+446168	sf3a3 (splicing factor 3a, subunit 3)	1	0	1	0	0	0	173
+555778	slc2a1a (solute carrier family 2 (facilitated glucose transporter), member 1a)	1	0	1	0	0	0	173
+5424	POLD1 (DNA polymerase delta 1, catalytic subunit)	1	0	1	0	0	0	173
+7088	TLE1 (transducin like enhancer of split 1)	1	0	1	0	0	0	173
+606498	pabpc1a (poly(A) binding protein, cytoplasmic 1a)	1	0	1	0	0	0	173
+30183	acvr1ba (activin A receptor, type IBa)	1	0	1	0	0	0	173
+573110	cbx4 (chromobox homolog 4 (Pc class homolog, Drosophila))	1	0	4	0	0	0	173
+30465	lhx5 (LIM homeobox 5)	1	0	2	0	0	0	173
+560942	crb1 (crumbs family member 1, photoreceptor morphogenesis associated)	1	0	2	0	0	0	173
+30355	apoa1a (apolipoprotein A-Ia)	1	0	1	0	0	0	173
+30399	ta (T, brachyury homolog a)	1	0	4	0	0	0	173
+30144	wnt8b (wingless-type MMTV integration site family, member 8b)	1	0	2	0	0	0	173
+565658	sema3e (sema domain, immunoglobulin domain (Ig), short basic domain, secreted, (semaphorin) 3E)	1	0	1	0	0	0	173
+30523	tcf7l1a (transcription factor 7-like 1a (T-cell specific, HMG-box))	1	0	2	0	0	0	173
+24873	Vdr (vitamin D (1,25- dihydroxyvitamin D3) receptor)	1	0	1	0	0	0	173
+7157	TP53 (tumor protein p53)	1	0	1	0	0	0	173
+30095	ckma (creatine kinase, muscle a)	1	0	1	0	0	0	173
+30697	nkx2.2a (NK2 homeobox 2a)	1	0	1	0	0	0	173
+3065	HDAC1 (histone deacetylase 1)	1	0	2	0	0	0	173
+30429	mylpfa (myosin light chain, phosphorylatable, fast skeletal muscle a)	1	0	1	0	0	0	173
+7090	TLE3 (transducin like enhancer of split 3)	1	0	2	0	0	0	173
+368488	bcap31 (B-cell receptor-associated protein 31)	1	0	1	0	0	0	173
+777766	ubc (ubiquitin C)	1	0	4	0	0	0	173
+337795	dact2 (dishevelled-binding antagonist of beta-catenin 2)	1	0	1	0	0	0	173
+436971	tomm20b (translocase of outer mitochondrial membrane 20b)	1	0	1	0	0	0	173
+406275	fbl (fibrillarin)	1	0	1	0	0	0	173
+393488	myl13 (myosin, light chain 13)	1	0	1	0	0	0	173
+333939	lrpap1 (low density lipoprotein receptor-related protein associated protein 1)	1	0	1	0	0	0	173
+326283	smad3b (SMAD family member 3b)	1	0	2	0	0	0	173
+57931	axin1 (axin 1)	1	0	2	0	0	0	173
+30428	csnk2b (casein kinase 2, beta polypeptide)	1	0	1	0	0	0	173
+792062	cyt1l (type I cytokeratin, enveloping layer, like)	1	0	1	0	0	0	173
+171465	phc2a (polyhomeotic homolog 2a (Drosophila))	1	0	4	0	0	0	173
+352930	gli1 (GLI family zinc finger 1)	1	0	1	0	0	0	173
+322007	usp1 (ubiquitin specific peptidase 1)	1	0	1	0	0	0	173
+777720	zranb1b (zinc finger, RAN-binding domain containing 1b)	1	0	2	0	0	0	173
+445133	kctd15b (potassium channel tetramerization domain containing 15b)	1	0	1	0	0	0	173
+393134	mkks (McKusick-Kaufman syndrome)	1	0	1	0	0	0	173
+334015	exoc3 (exocyst complex component 3)	1	0	1	0	0	0	173
+322206	ddx5 (DEAD (Asp-Glu-Ala-Asp) box helicase 5)	1	0	1	0	0	0	173
+327437	jade1 (jade family PHD finger 1)	1	0	1	0	0	0	173
+337193	setd3 (SET domain containing 3)	1	0	1	0	0	0	173
+550436	camk2a (calcium/calmodulin-dependent protein kinase II alpha)	1	0	2	0	0	0	173
+327035	rnf2 (ring finger protein 2)	1	0	4	0	0	0	173
+394249	bmi1b (bmi1 polycomb ring finger oncogene 1b)	1	0	3	0	0	0	173
+13543	Dvl2 (dishevelled segment polarity protein 2)	1	0	1	0	0	0	173
+406836	ube2v2 (ubiquitin-conjugating enzyme E2 variant 2)	1	0	1	0	0	0	173
+58100	badb (BCL2-associated agonist of cell death b)	1	0	1	0	0	0	173
+792391	hnf1ba (HNF1 homeobox Ba)	1	0	1	0	0	0	173
+474349	magi1b (membrane associated guanylate kinase, WW and PDZ domain containing 1b)	1	0	2	0	0	0	173
+30122	wnt8a (wingless-type MMTV integration site family, member 8a)	1	0	9	0	0	0	173
+321837	keap1a (kelch-like ECH-associated protein 1a)	1	0	1	0	0	0	173
+3842	TNPO1 (transportin 1)	1	0	1	0	0	0	173
+322338	exoc1 (exocyst complex component 1)	1	0	1	0	0	0	173
+402843	sfrp1a (secreted frizzled-related protein 1a)	1	0	1	0	0	0	173
+415202	psmd4a (proteasome 26S subunit, non-ATPase 4a)	1	0	1	0	0	0	173
+406245	tob1b (transducer of ERBB2, 1b)	1	0	3	0	0	0	173
+225164	Mib1 (mindbomb E3 ubiquitin protein ligase 1)	1	0	1	0	0	0	173
+568986	bbs1 (Bardet-Biedl syndrome 1)	1	0	1	0	0	0	173
+324243	stub1 (STIP1 homology and U-Box containing protein 1)	1	0	1	0	0	0	173
+393313	ube2nb (ubiquitin-conjugating enzyme E2Nb)	1	0	4	0	0	0	173
+60632	wnt3a (wingless-type MMTV integration site family, member 3A)	1	0	1	0	0	0	173
+100049175	nkd2a (naked cuticle homolog 2a)	1	0	1	0	0	0	173
+17130	Smad6 (SMAD family member 6)	1	0	1	0	0	0	173
+7334	UBE2N (ubiquitin conjugating enzyme E2 N)	1	0	2	0	0	0	173
+117510	sfrp5 (secreted frizzled-related protein 5)	1	0	1	0	0	0	173
+30370	fzd2 (frizzled class receptor 2)	1	0	2	0	0	0	173
+100151416	cdkn1a (cyclin-dependent kinase inhibitor 1A)	1	0	2	0	0	0	173
+30303	atoh1a (atonal bHLH transcription factor 1a)	1	0	1	0	0	0	173
+378848	hspa5 (heat shock protein 5)	1	0	1	0	0	0	173
+1080	CFTR (cystic fibrosis transmembrane conductance regulator)	1	0	1	0	0	0	173
+492362	klhl12 (kelch-like family member 12)	1	0	2	0	0	0	173
+554967	psmd1 (proteasome 26S subunit, non-ATPase 1)	1	0	1	0	0	0	173
+51194	IPO11 (importin 11)	1	0	1	0	0	0	173
+65226	rpa2 (replication protein A2)	1	0	1	0	0	0	173
+558502	ryk (receptor-like tyrosine kinase)	1	0	1	0	0	0	173
+322269	shfm1 (split hand/foot malformation (ectrodactyly) type 1)	1	0	1	0	0	0	173
+30076	vdra (vitamin D (1,25- dihydroxyvitamin D3) receptor a)	1	0	1	0	0	0	173
+6612	SUMO3 (small ubiquitin-like modifier 3)	1	0	1	0	0	0	173
+403042	gli3 (GLI family zinc finger 3)	1	0	1	0	0	0	173
+768304	atp2b4 (ATPase, Ca++ transporting, plasma membrane 4)	1	0	1	0	0	0	173
+641575	actn2b (actinin, alpha 2b)	1	0	1	0	0	0	173
+30131	dla (deltaA)	1	0	1	0	0	0	173
+30701	lef1 (lymphoid enhancer-binding factor 1)	1	0	3	0	0	0	173
+8452	CUL3 (cullin 3)	1	0	1	0	0	0	173
+851666	UBC13 (E2 ubiquitin-conjugating protein UBC13)	1	0	2	0	0	0	173
+58101	rplp0 (ribosomal protein, large, P0)	1	0	1	0	0	0	173
+493627	nkx2.2b (NK2 homeobox 2b)	1	0	1	0	0	0	173
+30105	wnt5b (wingless-type MMTV integration site family, member 5b)	1	0	5	0	0	0	173
+325615	nkx2.9 (NK2 transcription factor related, locus 9 (Drosophila))	1	0	2	0	0	0	173
+58092	smad3a (SMAD family member 3a)	1	0	2	0	0	0	173
+323855	prpf6 (PRP6 pre-mRNA processing factor 6 homolog (S. cerevisiae))	1	0	1	0	0	0	173
+568683	usp9 (ubiquitin specific peptidase 9)	1	0	1	0	0	0	173
+30532	pax3a (paired box 3a)	1	0	1	0	0	0	173
+30154	gli2a (GLI family zinc finger 2a)	1	0	1	0	0	0	173
+641324	ube2v1 (ubiquitin-conjugating enzyme E2 variant 1)	1	0	1	0	0	0	173
+17126	Smad2 (SMAD family member 2)	1	0	1	0	0	0	173
+30590	tp53 (tumor protein p53)	1	0	1	0	0	0	173
+564464	lnx2b (ligand of numb-protein X 2b)	1	0	2	0	0	0	173
+566846	dub (duboraya)	1	0	1	0	0	0	173
+562489	trim3a (tripartite motif containing 3a)	1	0	2	0	0	0	173
+352944	cxcl12a (chemokine (C-X-C motif) ligand 12a (stromal cell-derived factor 1))	1	0	1	0	0	0	173
+323630	dvl2 (dishevelled segment polarity protein 2)	1	0	2	0	0	0	173
+553607	camk2n1a (calcium/calmodulin-dependent protein kinase II inhibitor 1a)	1	0	1	0	0	0	173
+17125	Smad1 (SMAD family member 1)	1	0	1	0	0	0	173
+386762	apc (adenomatous polyposis coli)	1	0	2	0	0	0	173
+378972	akt2 (v-akt murine thymoma viral oncogene homolog 2)	1	0	2	0	0	0	173
+406738	cfl1l (cofilin 1 (non-muscle), like)	1	0	1	0	0	0	173
+321974	prmt1 (protein arginine methyltransferase 1)	1	0	1	0	0	0	173
+325618	rpl27 (ribosomal protein L27)	1	0	1	0	0	0	173
+60639	pax6b (paired box 6b)	1	0	1	0	0	0	173
+30292	ndr2 (nodal-related 2)	1	0	1	0	0	0	173
+335015	fam76b (family with sequence similarity 76, member B)	1	0	1	0	0	0	173
+17131	Smad7 (SMAD family member 7)	1	0	1	0	0	0	173
+100141360	btbd6a (BTB (POZ) domain containing 6a)	1	0	1	0	0	0	173
